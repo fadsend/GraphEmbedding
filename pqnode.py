@@ -13,21 +13,32 @@ class Label(Enum):
     PERTINENT = 3
 
 
+class Mark(Enum):
+    UNMARKED = 1
+    QUEUED = 2
+    BLOCKED = 3
+    UNBLOCKED = 4
+
+# Global variables
+BLOCK_COUNT = 0
+BLOCKED_NODES = 0
+OFF_THE_TOP = False
+QUEUE = []
+
+
 class PQnode(object):
 
-    # TODO: should be extendend
-    def __init__(self, nodeType, label):
-        self.mType = nodeType
-        self.mLabel = label
-
-    def setType(self, newType):
-        self.mType = newType
-
-    def getType(self):
-        return self.mType
-
-    def setLabel(self, newLabel):
-        self.mLabel = newLabel
-
-    def getLabel(self):
-        return self.mLabel
+    # TODO: Perhaps add more field as arguments
+    def __init__(self, parent, nodeType):
+        self.childCount = 0
+        self.circularLink = None
+        self.endmostChildren = None
+        self.fullChildren = None
+        self.immediateSublings = (None, None)
+        self.label = Label.EMPTY
+        self.mark = Mark.UNMARKED
+        self.parent = parent
+        self.partialChilren = set([])
+        self.pertinentChildCount = 0
+        self.pertinentLeafCount = 0
+        self.nodeType = nodeType
