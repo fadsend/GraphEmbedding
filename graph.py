@@ -32,6 +32,19 @@ class Graph(object):
 
         self.constructGraph(parsedEdges)
 
+    def computeStNumbering(self):
+        # FIXME: implement
+        pass
+
+    def getEdgesLower(self, number):
+        pass
+
+    def getEdgesHigher(self, nuber):
+        pass
+
+    def getNumOfVertices(self):
+        return 0
+
     def __str__(self):
         tmpStr = ""
         for vertex in self.adjList:

@@ -31,9 +31,12 @@ QUEUE = None
 class PQnode(object):
 
     # TODO: Perhaps add more field as arguments
-    def __init__(self, parent, nodeType):
+    def __init__(self, parent, nodeType, data=None):
         self.childCount = 0
-        self.circularLink = None
+
+        # List of childs
+        self.circularLink = []
+
         self.endmostChildren = None
         self.fullChildren = None
         self.immediateSublings = (None, None)
@@ -44,10 +47,21 @@ class PQnode(object):
         self.pertinentChildCount = 0
         self.pertinentLeafCount = 0
         self.nodeType = nodeType
+        self.data = data
+
+    def addChild(self, childNode):
+        self.childCount += 1
+        self.circularLink.append(childNode)
+        # For now always add new node to the end
+        self.endmostChildren = childNode
+
+        # Just to make sure that parent reference is correct
+        childNode.parent = self
+
+        # TODO: add more 
 
 
-def buble(tree, subset):
-    return None
+
 
 if __name__ == "__main__":
     import doctest

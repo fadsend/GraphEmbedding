@@ -1,10 +1,11 @@
 from pqtree import PQtree
 from pqtree import Bubble, Reduce
 from pqnode import Type
+import copy
 
 
 def planarTesting(workingGraph):
-    graph = workingGraph.copy()
+    graph = copy.deepcopy(workingGraph)
     graph.computeStNumbering()
 
     U = graph.getEdgesLower(1)
