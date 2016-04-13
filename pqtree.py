@@ -8,7 +8,7 @@ class PQtree(object):
         self.subset = subset
         self.root = None
 
-    def constructFromGraph(self, graph):
+    def construct_from_graph(self, graph):
         edges = graph.getEdgeNumbers()
 
         # TODO: change to logger
@@ -17,16 +17,16 @@ class PQtree(object):
         self.root = PQnode(None, Type.P_NODE)
 
         for edge in edges:
-            self.addNode(self.root, Type.LEAF, edge)
+            self.add_node(self.root, Type.LEAF, edge)
 
-    def addChild(self, parent, nodeType, data):
-        newNode = PQnode(parent, nodeType, data)
-        parent.addChild(newNode)
+    def add_node(self, parent, node_type, data):
+        new_node = PQnode(parent, node_type, data)
+        parent.add_child(new_node)
 
 
-def Reduce(tree, subset):
+def reduce(tree, subset):
     pass
 
 
-def Bubble(tree, subset):
+def bubble(tree, subset):
     pass

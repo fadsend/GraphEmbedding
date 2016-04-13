@@ -1,5 +1,5 @@
 from graph import Graph
-from LinearAlgorithm import planarTesting
+from LinearAlgorithm import planar_testing
 
 
 def main():
@@ -10,8 +10,8 @@ def main():
              (3, 4)]
 
     graph = Graph()
-    graph.constructGraph(edges)
-    result = planarTesting(graph)
+    graph.construct_graph(edges)
+    result = planar_testing(graph)
 
     if result:
         print("Graph is planar")

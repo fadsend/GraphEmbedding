@@ -29,38 +29,35 @@ QUEUE = None
 
 
 class PQnode(object):
-
     # TODO: Perhaps add more field as arguments
-    def __init__(self, parent, nodeType, data=None):
+    def __init__(self, parent, node_type, data=None):
         self.childCount = 0
 
-        # List of childs
+        # List of children
         self.circularLink = []
 
         self.endmostChildren = None
         self.fullChildren = None
-        self.immediateSublings = (None, None)
+        self.immediate_sublings = (None, None)
         self.label = Label.EMPTY
         self.mark = Mark.UNMARKED
         self.parent = parent
-        self.partialChilren = set([])
+        self.partial_children = set([])
         self.pertinentChildCount = 0
         self.pertinentLeafCount = 0
-        self.nodeType = nodeType
+        self.nodeType = node_type
         self.data = data
 
-    def addChild(self, childNode):
+    def add_child(self, child_node):
         self.childCount += 1
-        self.circularLink.append(childNode)
+        self.circularLink.append(child_node)
         # For now always add new node to the end
-        self.endmostChildren = childNode
+        self.endmostChildren = child_node
 
         # Just to make sure that parent reference is correct
-        childNode.parent = self
+        child_node.parent = self
 
         # TODO: add more 
-
-
 
 
 if __name__ == "__main__":

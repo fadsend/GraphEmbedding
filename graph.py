@@ -5,7 +5,7 @@ class Graph(object):
 
     # Format:
     # edges: [(from, to)]
-    def constructGraph(self, edges):
+    def construct_graph(self, edges):
         for edge in edges:
             first = edge[0]
             second = edge[1]
@@ -21,37 +21,37 @@ class Graph(object):
     # Format:
     # 1 - 2
     # 3 - 2
-    def readFromFile(self, filename):
-        parsedEdges = []
+    def read_from_file(self, filename):
+        parsed_edges = []
         f = open(filename, "r")
         for line in f.readlines():
             parsed = line.split("-")
-            firstNode = int(parsed[0])
-            secondNode = int(parsed[1])
-            parsedEdges.append((firstNode, secondNode))
+            first_node = int(parsed[0])
+            second_node = int(parsed[1])
+            parsed_edges.append((first_node, second_node))
 
-        self.constructGraph(parsedEdges)
+        self.construct_graph(parsed_edges)
 
-    def computeStNumbering(self):
+    def compute_st_numbering(self):
         # FIXME: implement
         pass
 
-    def getEdgesLower(self, number):
+    def get_edges_lower(self, number):
         pass
 
-    def getEdgesHigher(self, nuber):
+    def get_edges_higher(self, nuber):
         pass
 
-    def getNumOfVertices(self):
+    def get_num_of_vertices(self):
         return 0
 
     def __str__(self):
-        tmpStr = ""
+        tmp_str = ""
         for vertex in self.adjList:
-            tmpStr += str(vertex) + "-->" + str(self.adjList[vertex]) + "\n"
-        return tmpStr
+            tmp_str += str(vertex) + "-->" + str(self.adjList[vertex]) + "\n"
+        return tmp_str
 
 if __name__ == "__main__":
     graph = Graph()
-    graph.readFromFile("tmp.txt")
+    graph.read_from_file("tmp.txt")
     print(graph)
