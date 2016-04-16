@@ -37,13 +37,24 @@ class Graph(object):
         pass
 
     def get_edges_lower(self, number):
-        pass
+        edges = []
+        for vertex in self.adjList.keys():
+            if vertex == number:
+                for adj_vertex in self.adjList[vertex]:
+                    edges.append((vertex, adj_vertex))
 
-    def get_edges_higher(self, nuber):
-        pass
+        return edges
+
+    def get_edges_higher(self, number):
+        edges = []
+        for vertex in self.adjList.keys():
+            for adj_vertex in self.adjList[vertex]:
+                if adj_vertex == number:
+                    edges.append((vertex, adj_vertex))
+        return edges
 
     def get_num_of_vertices(self):
-        return 0
+        return len(self.adjList)
 
     def __str__(self):
         tmp_str = ""

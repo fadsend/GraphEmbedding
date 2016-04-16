@@ -46,8 +46,8 @@ class Queue(object):
         else:
             self.data = list(data)
 
-    def push(self, dataToAdd):
-        self.data.append(dataToAdd)
+    def push(self, data_to_add):
+        self.data.append(data_to_add)
 
     def pop(self):
         return self.data.pop(0)
