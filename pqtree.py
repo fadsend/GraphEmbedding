@@ -1,5 +1,6 @@
 from pqnode import PQnode, Type, Mark
 from queue import Queue
+from templates import *
 
 
 class PQtree(object):
@@ -15,7 +16,7 @@ class PQtree(object):
         # TODO: change to logger
         print("[PQtree::constructFromGraph] Edges: " + str(edges))
 
-        self.root = PQnode(None, Type.P_NODE)
+        self.root = PQnode(None)
 
         for edge in edges:
             self.add_node(self.root, Type.LEAF, edge)
@@ -35,11 +36,6 @@ BLOCKED_NODES = 0
 OFF_THE_TOP = 0
 # Queue of processed nodes
 QUEUE = None
-
-
-def reduce(tree : PQtree, subset: set) -> PQtree:
-    global QUEUE, BLOCK_COUNT, BLOCKED_NODES, OFF_THE_TOP
-    return None
 
 
 def filter_sublings(sublings: tuple, mark: Mark) -> list:
@@ -68,7 +64,7 @@ def get_max_consecutive_blocked_sublings_list(node):
     return result_list
 
 
-def bubble(tree, subset):
+def bubble_tree(tree, subset):
     global QUEUE, BLOCK_COUNT, BLOCKED_NODES, OFF_THE_TOP
 
     # Initialize global variables
@@ -132,5 +128,46 @@ def bubble(tree, subset):
         else:
             BLOCK_COUNT += (1 - len(blocked_sublings))
             BLOCKED_NODES += 1
+
+    return tree
+
+
+def reduce_tree(tree, subset):
+    global QUEUE, BLOCK_COUNT, BLOCKED_NODES, OFF_THE_TOP
+
+    QUEUE = Queue()
+
+    for leaf in subset:
+        QUEUE.push(leaf)
+        leaf.set_pertinent_leaf_count(1)
+
+    while QUEUE.size() > 0:
+        node = QUEUE.pop()
+        if node.get_pertinent_leaf_count() < len(subset):
+            node_parent = node.get_parent()
+            assert node_parent is not None
+            node_parent.pertinent_leaf_count += node.pertinent_leaf_count
+            node_parent.pertinent_child_count -= 1
+            if node_parent.pertinent_child_count == 0:
+                QUEUE.push(node_parent)
+
+            if not template_l1(node, subset) and \
+               not template_p1(node) and \
+               not template_p3(node) and \
+               not template_q1(node) and \
+               not template_q2(node):
+                return PQtree(set(), set())
+
+        else:
+
+            if not template_l1(node, subset) and \
+               not template_p1(node) and \
+               not template_p2(node) and \
+               not template_p4(node) and \
+               not template_p6(node) and \
+               not template_p1(node) and \
+               not template_q2(node) and \
+               not template_q3(node):
+                return PQtree(set(), set())
 
     return tree

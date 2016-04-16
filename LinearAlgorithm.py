@@ -1,5 +1,5 @@
 from pqtree import PQtree
-from pqtree import bubble, reduce
+from pqtree import bubble_tree, reduce_tree
 from pqnode import Type
 import copy
 
@@ -13,8 +13,8 @@ def planar_testing(working_graph):
     T = PQtree(U, U)
     for i in range(2, n):
         S = graph.get_edges_higher(i)
-        T = bubble(T, S)
-        T = reduce(T, S)
+        T = bubble_tree(T, S)
+        T = reduce_tree(T, S)
         if T is None:
             return False
         S1 = graph.get_edges_lower(i)

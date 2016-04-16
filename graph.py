@@ -64,5 +64,5 @@ class Graph(object):
 
 if __name__ == "__main__":
     graph = Graph()
-    graph.read_from_file("tmp.txt")
+    #graph.read_from_file("tmp.txt")
     print(graph)
