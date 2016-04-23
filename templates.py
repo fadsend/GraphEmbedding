@@ -5,39 +5,37 @@ from pqnode import PQnode, Type, Label
 # Only applicable for leafs
 # If leaf is in subset then mark it as full
 # otherwise mark it as empty
-def template_l1(node: PQnode, subset: set(PQnode)) -> bool:
-    if node.node_type != Type.LEAF:
-        return False
-
-    if node in subset:
-        node.label = Label.FULL
+def template_l1(node: PQnode, is_root: bool) -> bool:
+    if node.node_type == Type.LEAF and node.label == Label.FULL:
+        if is_root:
+            pass
+        return True
     else:
-        node.label = Label.EMPTY
-    return True
+        return False
 
 
 # Template P1
 # Match P-node only
 # If all children of P-node are empty, mark node as empty
 # If all are full then mark node as full
-def template_p1(node: PQnode) -> bool:
-    if node.node_type != Type.P_NODE:
+def template_p1(node: PQnode, is_root: bool) -> bool:
+    if node.node_type != Type.P_NODE or len(node.full_children) != node.child_count:
         return False
-
-    if len(node.full_children) == node.child_count:
-        node.label = Label.FULL
-    elif len(node.full_children) == 0 and node.child_count != 0:
-        node.label = Label.EMPTY
     else:
+        # TODO: check fo full_children == 0?
+        node.label = Label.FULL
+        if is_root:
+            pass
+        return True
+
+
+def template_p2(node: PQnode, is_root: bool) -> bool:
+    if node.node_type != Type.P_NODE or len(node.partial_children) > 0:
         return False
-    return True
-
-
-def template_p2(node: PQnode) -> bool:
-    if node.node_type != Type.P_NODE:
-        return False
-    return False
-
+    else:
+        node.child_count = node.child_count - len(node.full_children) + 1
+        new_node = PQnode()
+       # new_node.parent =
 
 def template_p3(node: PQnode) -> bool:
     if node.node_type != Type.P_NODE:

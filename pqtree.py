@@ -7,8 +7,20 @@ class PQtree(object):
 
     def __init__(self, universe: set, subset: set):
         self.universe = universe
-        self.subset = subset
+       # self.subset = subset
         self.root = None
+        self.construct_tree_with_subset(subset)
+
+    def construct_tree_with_subset(self, subset):
+        self.root = PQnode(node_type=Type.P_NODE)
+        subroot = PQnode(node_type=Type.P_NODE)
+        self.root.add_child(subroot)
+        for element in self.universe:
+            new_node = PQnode(node_type=Type.LEAF, data=element)
+            if element in subset:
+                subroot.add_child(new_node)
+            else:
+                self.root.add_child(new_node)
 
     def construct_from_graph(self, graph):
         edges = graph.getEdgeNumbers()
@@ -21,10 +33,43 @@ class PQtree(object):
         for edge in edges:
             self.add_node(self.root, Type.LEAF, edge)
 
-    def add_node(self, parent, node_type, data):
-        # FIXME: deal with new constructor for PQnode
-        new_node = PQnode(parent)
-        parent.add_child(new_node)
+    # def add_node(self, parent, node_type, data):
+    #     # FIXME: deal with new constructor for PQnode
+    #     new_node = PQnode(parent)
+    #     parent.add_child(new_node)
+
+    def __str__(self):
+        return self.print_tree(self.root)
+
+    def print_tree(self, node):
+        if node is None:
+            return ""
+
+        result = ""
+        if node.node_type == Type.Q_NODE:
+            result += "{ "
+            child = node.left_endmost
+            while child is not None:
+                result += self.print_tree(child) + ", "
+                child = child.right_subling
+
+            # Remove last comma
+            # TODO: Do it in a better way
+            result = result[:-2]
+            result += " }"
+
+        elif node.node_type == Type.P_NODE:
+            result += "[ "
+            for child in node.circular_link:
+                result += self.print_tree(child) + ", "
+            # Remove last comma
+            # TODO: Do it in a better way
+            result = result[:-2]
+            result += " ]"
+        else:
+            result = str(node.data)
+
+        return result
 
 
 # Global variables

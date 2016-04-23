@@ -22,7 +22,7 @@ class Mark(Enum):
 
 class PQnode(object):
     # TODO: Perhaps add more field as arguments
-    def __init__(self, data=None):
+    def __init__(self, node_type = Type.LEAF,  data=None):
         # Number of children nodes
         self.child_count = 0
 
@@ -31,7 +31,8 @@ class PQnode(object):
         self.circular_link = []
 
         # Reference to the last node's child. Used only by Q-node.
-        self.endmost_children = None
+        self.left_endmost = None
+        self.right_endmost = None
 
         # Set of full node's children
         self.full_children = set()
@@ -64,7 +65,7 @@ class PQnode(object):
         self.pertinent_leaf_count = 0
 
         # Node type: LEAF, P_NODE or Q_NODE
-        self.node_type = Type.LEAF
+        self.node_type = node_type
 
         # Reference to node data(like id of edge)
         self.data = data
@@ -125,7 +126,7 @@ class PQnode(object):
         # Just to make sure that parent reference is correct
         child_node.parent = self
 
-        # TODO: add more 
+        # TODO: add more
 
 
 if __name__ == "__main__":
