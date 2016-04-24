@@ -154,8 +154,10 @@ class PQnode(object):
 
     def replace_partial_child(self, old_child, new_child):
         new_child.parent = self
-        self.partial_children.remove(old_child)
+
         self.partial_children.append(new_child)
+        # Looks like its not needed for now
+        # self.partial_children.remove(old_child)
 
         if self.node_type == Type.P_NODE:
             self.circular_link.remove(old_child)
@@ -168,6 +170,11 @@ class PQnode(object):
     def is_endmost_child(self):
         return self.left_subling is not None or \
                 self.right_subling is not None
+
+    def mark_full(self):
+        self.label = Label.FULL
+        if self.parent is not None:
+            self.parent.full_children.append(self)
 
 
 if __name__ == "__main__":
