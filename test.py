@@ -3,7 +3,7 @@ from pqtree import PQtree, bubble_tree, reduce_tree
 
 
 def run_tests():
-    # test1()
+    test1()
     test2()
 
 
@@ -28,6 +28,7 @@ def test1():
     frontier = T.get_frontier()
     assert("3, 6, 5" in ", ".join(frontier))
 
+
 def test2():
     data = [Data(i) for i in range(0, 10)]
     test_universe = data
@@ -37,8 +38,7 @@ def test2():
     tmp = [data[i] for i in [5, 7]]
     T = bubble_tree(T, tmp)
     T = reduce_tree(T, tmp)
-    print(T.get_frontier())
-
+    assert("7, 5, 1, 3" in ", ".join(T.get_frontier()))
 
 
 if __name__ == "__main__":

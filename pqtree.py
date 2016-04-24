@@ -208,11 +208,43 @@ class PQtree(object):
 
         # Should be Q-node
         partial_child = node.partial_children[0]
+        if partial_child.left_endmost == Label.FULL:
+            partial_full = partial_child.left_endmost
+            partial_empty = partial_child.right_endmost
+        else:
+            partial_full = partial_child.right_endmost
+            partial_empty = partial_child.left_endmost
 
+        if partial_full is None or partial_empty is None:
+            return False
 
         if len(node.full_children) == 1:
-            # Just move it to
-            pass
+            full_child = node.full_children[0]
+            node.full_children = []
+            node.circular_link.remove(full_child)
+        else:
+            full_child = PQnode()
+            full_child.node_type = Type.P_NODE
+            node.move_full_children(full_child)
+            node.circular_link.remove(full_child)
+
+        # TODO: refactor a little bit
+        if partial_child.right_endmost.label == Label.FULL:
+            endmost_full = partial_child.right_endmost
+            full_child.parent = partial_child
+            partial_child.right_endmost = full_child
+            full_child.mark_full()
+            full_child.left_subling = endmost_full
+            endmost_full.right_subling = full_child
+        else:
+            endmost_full = partial_child.left_endmost
+            full_child.parent = partial_child
+            partial_child.left_endmost = full_child
+            full_child.mark_full()
+            full_child.right_subling = endmost_full
+            endmost_full.left_subling = full_child
+
+        # TODO: if node has only one child, delete it
 
         return True
 
