@@ -1,32 +1,32 @@
-class Queue(object):
+class MyQueue(object):
 
     def __init__(self, data=None):
         """Initiate a queue
 
         Initiate an empty queue
-        >>> Queue().size()
+        >>> MyQueue().size()
         0
 
         The same for empty list
-        >>> Queue([]).size()
+        >>> MyQueue([]).size()
         0
 
         Assert on incorrect input
-        >>> Queue(23)
+        >>> MyQueue(23)
         Traceback (most recent call last):
         ...
         AssertionError
 
         Initiate queue from tuple
-        >>> Queue((10, 12, 13)).size()
+        >>> MyQueue((10, 12, 13)).size()
         3
 
         Check get first element
-        >>> Queue([1, 2, 3]).pop()
+        >>> MyQueue([1, 2, 3]).pop()
         1
 
         Add new element
-        >>> s = Queue([1, 2, 3])
+        >>> s = MyQueue([1, 2, 3])
         >>> s.push(4)
         >>> s.size()
         4

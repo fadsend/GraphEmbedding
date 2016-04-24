@@ -10,7 +10,7 @@ class Type(Enum):
 class Label(Enum):
     FULL = 1
     EMPTY = 2
-    PERTINENT = 3
+    PARTIAL = 3
 
 
 class Mark(Enum):
@@ -20,11 +20,28 @@ class Mark(Enum):
     UNBLOCKED = 4
 
 
+# Data class to store info in nodes. Also needed for cross-reference
+# with node to speed up computations.
+class Data(object):
+
+    def __init__(self, data):
+        self.data = data
+        self.node_reference = None
+
+    def __str__(self):
+        return str(self.data)
+
+
 class PQnode(object):
+    # Counter to get unique id for each node. Useful for debugging.
+    id_counter = 0
+
     # TODO: Perhaps add more field as arguments
-    def __init__(self, node_type = Type.LEAF,  data=None):
+    def __init__(self, node_type=Type.LEAF, data=None):
         # Number of children nodes
-        self.child_count = 0
+        # self.child_count = 0
+        self.id = PQnode.id_counter
+        PQnode.id_counter += 1
 
         # Linked list of node's children. Used only by P-node.
         # TODO: perhaps double-linked list should be used instead
@@ -35,7 +52,8 @@ class PQnode(object):
         self.right_endmost = None
 
         # Set of full node's children
-        self.full_children = set()
+        # TODO: change to linked list later
+        self.full_children = []
 
         # Tuple of immediate sublings.
         # For children of P-node it just a (None, None)
@@ -43,7 +61,6 @@ class PQnode(object):
         # For interior children of Q-node it is (None, None)
         self.left_subling = None
         self.right_subling = None
-        self.immediate_sublings = (self.left_subling, self.right_subling)
 
         # Node's label: EMPTY, FULL or PARTIAL
         self.label = Label.EMPTY
@@ -56,9 +73,9 @@ class PQnode(object):
         self.parent = None
 
         # Set of all partial children of the node
-        self.partial_children = set()
+        self.partial_children = []
 
-        # Number of pertinent children
+        # Number of pertinent children Full or partial
         self.pertinent_child_count = 0
 
         # Number of pertinent leafs
@@ -69,30 +86,11 @@ class PQnode(object):
 
         # Reference to node data(like id of edge)
         self.data = data
-
-    def set_type(self, node_type: Type):
-        self.node_type = node_type
-
-    def set_parent(self, parent) -> None:
-        assert \
-            type(parent) == PQnode
-
-        self.parent = parent
-
-    def get_parent(self):
-        return self.parent
-
-    def set_data(self, data):
-        self.data = data
-
-    def set_mark(self, mark: Mark) -> None:
-        self.mark = mark
-
-    def get_mark(self) -> Mark:
-        return self.mark
+        if self.data is not None:
+            self.data.node_reference = self
 
     def get_sublings(self) -> tuple:
-        return self.immediate_sublings
+        return self.left_subling, self.right_subling
 
     def get_left_subling(self):
         return self.left_subling
@@ -102,9 +100,9 @@ class PQnode(object):
 
     def get_num_sublings(self):
         count = 0
-        if self.immediate_sublings[0] is None:
+        if self.left_subling is not None:
             count += 1
-        if self.immediate_sublings[1] is None:
+        if self.right_subling is not None:
             count += 1
         return count
 
@@ -118,7 +116,7 @@ class PQnode(object):
         self.pertinent_child_count += 1
 
     def add_child(self, child_node):
-        self.child_count += 1
+        # self.child_count += 1
         self.circular_link.append(child_node)
         # For now always add new node to the end
         self.endmost_children = child_node
@@ -127,6 +125,49 @@ class PQnode(object):
         child_node.parent = self
 
         # TODO: add more
+
+    def copy_node(self, move_data=False):
+        new_node = PQnode()
+        # new_node.child_count = self.child_count
+        new_node.circular_link = self.circular_link[:]
+        new_node.left_endmost = self.left_endmost
+        new_node.right_endmost = self.right_endmost
+        new_node.full_children = self.full_children[:]
+        new_node.left_subling = self.left_subling
+        new_node.right_subling = self.right_subling
+        new_node.label = self.label
+        new_node.mark = self.mark
+        new_node.parent = self.parent
+        new_node.node_type = self.node_type
+        if move_data:
+            new_node.data = self.data
+            new_node.data.node_reference = new_node
+            self.data = None
+        return new_node
+
+    def move_full_children(self, new_node):
+        for full_child in self.full_children:
+            self.circular_link.remove(full_child)
+            new_node.circular_link.append(full_child)
+            full_child.parent = new_node
+            # TODO: Should full_children list be also updated???
+
+    def replace_partial_child(self, old_child, new_child):
+        new_child.parent = self
+        self.partial_children.remove(old_child)
+        self.partial_children.append(new_child)
+
+        if self.node_type == Type.P_NODE:
+            self.circular_link.remove(old_child)
+            self.circular_link.append(new_child)
+        else:
+            # It must be Q-node
+            # TODO: implement
+            pass
+
+    def is_endmost_child(self):
+        return self.left_subling is not None or \
+                self.right_subling is not None
 
 
 if __name__ == "__main__":

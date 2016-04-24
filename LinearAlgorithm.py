@@ -1,5 +1,6 @@
 from pqtree import PQtree
 from pqtree import bubble_tree, reduce_tree
+from pqnode import Data
 from pqnode import Type
 import copy
 
@@ -29,10 +30,23 @@ import copy
 
 
 
-def planar_testing(working_graph):
-    test_universe = {1, 2, 3, 4}
-    test_subset = {2, 3}
+def test():
+    data = [Data(0),
+            Data(1),
+            Data(2),
+            Data(3),
+            Data(4),
+            Data(5),
+            Data(6)]
+
+    test_universe = data
+    test_subset = data[1:3]
     T = PQtree(test_universe, test_subset)
+    print(T)
+    tmp = [data[3], data[6], data[5]]
+    T = bubble_tree(T, tmp)
+    T = reduce_tree(T, tmp)
+    print("3, 6" in str(T))
     print(T)
 
 
