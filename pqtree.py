@@ -15,6 +15,9 @@ class PQtree(object):
     #     self.root = None
     #     self.construct_tree_with_subset(subset)
 
+    def reset(self):
+        self.root.reset()
+
     # TODO:Check how tree should be constructed
     def construct_tree_with_subset(self, subset):
         self.root = PQnode(node_type=Type.P_NODE, data=None)
@@ -221,6 +224,7 @@ class PQtree(object):
             partial_empty = partial_child.left_endmost
 
         if partial_full is None or partial_empty is None:
+            print("Template_P4 result False")
             return False
 
         if len(node.full_children) == 1:
@@ -250,6 +254,7 @@ class PQtree(object):
 
         # TODO: if node has only one child, delete it
 
+        print("Template_P4 result True")
         return True
 
 
@@ -285,6 +290,7 @@ class PQtree(object):
             if child.label != Label.FULL:
                 print("[Template_Q1] result = " + str(False))
                 return False
+            child = child.right_subling
 
         node.mark_full()
         print("[Template_Q1] result = " + str(True))
@@ -293,13 +299,17 @@ class PQtree(object):
 
     def template_q2(self, node: PQnode) -> bool:
         if node.node_type != Type.Q_NODE:
+            print("[Template_Q2] result = False")
             return False
-        pass
-
+        print("[Template_Q2] result = False")
+        return False
 
     def template_q3(self, node: PQnode) -> bool:
         if node.node_type != Type.Q_NODE:
+            print("[Template_Q3] result = False")
             return False
+
+        print("[Template_Q3] result = False")
         return False
 
 
@@ -341,7 +351,7 @@ def get_max_consecutive_blocked_sublings_list(node):
     return result_list
 
 
-def bubble_tree(tree, subset):
+def __bubble(tree, subset):
     global QUEUE, BLOCK_COUNT, BLOCKED_NODES, OFF_THE_TOP
 
     # Initialize global variables
@@ -410,7 +420,7 @@ def bubble_tree(tree, subset):
     return tree
 
 
-def reduce_tree(tree, subset):
+def __reduce(tree, subset):
     global QUEUE, BLOCK_COUNT, BLOCKED_NODES, OFF_THE_TOP
 
     QUEUE = myqueue.MyQueue()
@@ -449,5 +459,20 @@ def reduce_tree(tree, subset):
                not tree.template_q3(node):
                 return PQtree([], [])
 
+    return tree
+
+TRACE_RESULT = False
+
+# TODO: Introduce error checks
+def reduce_tree(tree, subset):
+    tree = __bubble(tree, subset)
+    if TRACE_RESULT:
+        print(tree)
+    tree = __reduce(tree, subset)
+
+    if TRACE_RESULT:
+        print(tree)
+
+    tree.reset()
     return tree
 

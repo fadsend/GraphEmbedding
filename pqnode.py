@@ -36,6 +36,7 @@ class PQnode(object):
     id_counter = 0
 
     # TODO: Perhaps add more field as arguments
+    # TODO: add iterator for children of different types
     def __init__(self, node_type=Type.LEAF, data=None):
         # Number of children nodes
         # self.child_count = 0
@@ -202,6 +203,24 @@ class PQnode(object):
 
     def __str__(self):
         return str(self.data)
+
+    def reset(self):
+        if self.node_type == Type.P_NODE:
+            for child in self.circular_link:
+                child.reset()
+        elif self.node_type == Type.Q_NODE:
+            child = self.left_endmost
+            while child is not None:
+                child.reset()
+                child = child.right_subling
+
+        # Common part for all nodes
+        self.full_children = []
+        self.partial_children = []
+        self.pertinent_child_count = 0
+        self.pertinent_leaf_count = 0
+        self.mark = Mark.UNMARKED
+        self.label = Label.EMPTY
 
 
 if __name__ == "__main__":
