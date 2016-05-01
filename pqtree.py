@@ -512,18 +512,11 @@ def __reduce(tree, subset):
 
     return tree
 
-TRACE_RESULT = False
 
 # TODO: Introduce error checks
 def reduce_tree(tree, subset):
     tree = __bubble(tree, subset)
-    if TRACE_RESULT:
-        print(tree)
     tree = __reduce(tree, subset)
-
-    if TRACE_RESULT:
-        print(tree)
-
     tree.reset()
     return tree
 
