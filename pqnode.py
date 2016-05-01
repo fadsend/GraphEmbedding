@@ -23,7 +23,6 @@ class Mark(Enum):
 # Data class to store info in nodes. Also needed for cross-reference
 # with node to speed up computations.
 class Data(object):
-
     def __init__(self, data):
         self.data = data
         self.node_reference = None
@@ -150,33 +149,62 @@ class PQnode(object):
             self.circular_link.remove(full_child)
             new_node.circular_link.append(full_child)
             full_child.parent = new_node
-            # TODO: Should full_children list be also updated???
+            new_node.full_children.append(full_child)
 
-    def replace_partial_child(self, old_child, new_child):
-        new_child.parent = self
+        self.full_children = []
 
-        self.partial_children.append(new_child)
-        # Looks like its not needed for now
-        # self.partial_children.remove(old_child)
-
+    # Replaces child of node depending on current type
+    def replace_child(self, old_child, new_child):
         if self.node_type == Type.P_NODE:
             self.circular_link.remove(old_child)
             self.circular_link.append(new_child)
         else:
-            # It must be Q-node
-            # TODO: implement
-            pass
+            if old_child == self.left_endmost:
+                self.left_endmost = new_child
+
+            if old_child == self.right_endmost:
+                self.right_endmost = new_child
+
+            new_child.left_subling = old_child.left_subling
+            new_child.right_subling = old_child.right_subling
+
+    # Replace old_child with new_child which is partial q-node
+    def replace_partial_child(self, old_child, new_child):
+        new_child.parent = self
+
+        # Add to list of partial children for each type of node
+        self.partial_children.append(new_child)
+        if old_child in self.partial_children:
+            self.partial_children.remove(old_child)
+
+        self.replace_child(old_child, new_child)
 
     def is_endmost_child(self):
         return self.left_subling is not None or \
-                self.right_subling is not None
+               self.right_subling is not None
 
     def mark_full(self):
         self.label = Label.FULL
-        if self.parent is not None:
+        if self.parent is not None and \
+           self not in self.parent.full_children:
             self.parent.full_children.append(self)
+
+    def mark_empty(self):
+        self.label = Label.EMPTY
+
+    def mark_partial(self):
+        self.label = Label.PARTIAL
+        if self.parent is not None and \
+           self not in self.parent.partial_children:
+            self.parent.partial_children.append(self)
+            # self.parent.pertinent_child_count += 1
+            # self.parent.pertinent_leaf_count += self.pertinent_leaf_count
+
+    def __str__(self):
+        return str(self.data)
 
 
 if __name__ == "__main__":
     import doctest
+
     doctest.testmod()

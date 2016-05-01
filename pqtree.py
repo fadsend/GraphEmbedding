@@ -134,8 +134,10 @@ class PQtree(object):
             print("[Template_P1] result = " + str(False))
             return False
 
-        # TODO: check fo full_children == 0?
-        node.mark_full()
+        #node.mark_full()
+        node.label = Label.FULL
+        if not is_root and not node in node.parent.full_children:
+            node.parent.full_children.append(node)
 
         return True
 
@@ -144,17 +146,17 @@ class PQtree(object):
             print("[Template_P2] result = " + str(False))
             return False
 
-        if len(node.circular_link) > 2:
-            new_node = PQnode()
-            new_node.node_type = Type.P_NODE
-            new_node.parent = node
-            # Move full nodes to new node
-            node.move_full_children(new_node)
-            node.circular_link.append(new_node)
+        if len(node.full_children) >= 2:
+            full_node = PQnode()
+            full_node.node_type = Type.P_NODE
+            full_node.parent = node
+            node.move_full_children(full_node)
+            node.circular_link.append(full_node)
+            full_node.mark_full()
 
-        node.label = Label.PARTIAL
+        node.mark_partial()
 
-        # print("[Template_P2] result = " + str(True))
+        print("P2 = True")
         return True
 
     def template_p3(self, node: PQnode) -> bool:
@@ -162,41 +164,42 @@ class PQtree(object):
             print("[Template_P3] result = " + str(False))
             return False
 
-        # TODO: check if len(node.circular_link) > 2 is needed
         new_qnode = PQnode()
         new_qnode.node_type = Type.Q_NODE
         new_qnode.label = Label.PARTIAL
-        # FIXME: is must have a parent
-        # FIXME: fix this method
+
         node.parent.replace_partial_child(node, new_qnode)
 
-        # At first check if number of full children > 1 otherwise there
-        # are no need to create a new P-node.
+        # Special case when only one full child
         if len(node.full_children) == 1:
             full_child = node.full_children[0]
             node.full_children = []
             node.circular_link.remove(full_child)
+        # Otherwise create new P-node
         else:
             full_child = PQnode()
             full_child.node_type = Type.P_NODE
             node.move_full_children(full_child)
 
         full_child.parent = new_qnode
-        new_qnode.left_endmost = full_child
+        new_qnode.right_endmost = full_child
         full_child.mark_full()
 
-        # Do the same for empty P-node
-        if len(node.circular_link) == 1:
+        # If only one empty child
+        if len(node.circular_link) - len(node.full_children) == 1:
             empty_child = node.circular_link[0]
             node.circular_link = []
         else:
             empty_child = node
 
         empty_child.parent = new_qnode
-        new_qnode.right_endmost = empty_child
+        new_qnode.left_endmost = empty_child
+        empty_child.mark_empty()
 
-        empty_child.left_subling = full_child
-        full_child.right_subling = empty_child
+        empty_child.right_subling = full_child
+        full_child.left_subling = empty_child
+
+        print("Template 3 exit with True")
 
         return True
 
@@ -205,6 +208,8 @@ class PQtree(object):
         if node.node_type != Type.P_NODE or \
            len(node.partial_children) != 1:
             return False
+
+        print("Template_P4 entered")
 
         # Should be Q-node
         partial_child = node.partial_children[0]
@@ -226,7 +231,6 @@ class PQtree(object):
             full_child = PQnode()
             full_child.node_type = Type.P_NODE
             node.move_full_children(full_child)
-            node.circular_link.remove(full_child)
 
         # TODO: refactor a little bit
         if partial_child.right_endmost.label == Label.FULL:
@@ -251,14 +255,17 @@ class PQtree(object):
 
     def template_p5(self, node: PQnode) -> bool:
         if node.node_type != Type.P_NODE:
+            print("[Template_P5] result = False")
             return False
 
         if len(node.partial_children) != 1:
+            print("[Template_P5] result = False")
             return False
 
         partial_node = node.partial_children[0]
         # TODO: complete implementation
 
+        print("[Template_P5] result = False")
         return False
 
 
@@ -311,7 +318,7 @@ QUEUE = None
 def filter_sublings(sublings: tuple, mark: Mark) -> list:
     sublings_to_return = []
     for sub in sublings:
-        if sub and sub.get_mark() == mark:
+        if sub and sub.mark == mark:
             sublings_to_return.append(sub)
     return sublings_to_return
 
@@ -344,7 +351,6 @@ def bubble_tree(tree, subset):
     OFF_THE_TOP = 0
 
     for element in subset:
-        print("Pushed node: " + str(element.node_reference.id) + " " + str(element.data))
         QUEUE.push(element.node_reference)
 
     while QUEUE.size() + BLOCK_COUNT + OFF_THE_TOP > 1:
@@ -354,7 +360,6 @@ def bubble_tree(tree, subset):
         # Get new node from queue and set BLOCKED mark by default
         node = QUEUE.pop()
         node.mark = Mark.BLOCKED
-        print("poped node: " + str(node.id))
 
         # Get list of blocked/unblocked sublings
         blocked_sublings = filter_sublings(node.get_sublings(), Mark.BLOCKED)
@@ -416,7 +421,6 @@ def reduce_tree(tree, subset):
 
     while QUEUE.size() > 0:
         node = QUEUE.pop()
-        print("node type = " + str(node.node_type))
         if node.pertinent_leaf_count < len(subset):
             node_parent = node.parent
 
