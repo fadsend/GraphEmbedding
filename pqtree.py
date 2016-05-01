@@ -286,41 +286,56 @@ class PQtree(object):
             full_node.node_type = Type.P_NODE
             node.move_full_children(full_node)
         else:
-            full_node = full_child
+            # node.full_children has a len == 1 here
+            full_node = node.full_children[0]
+            node.full_children = []
+            node.circular_link.remove(full_node)
 
         full_node.parent = partial_node
-        partial_node.full_children.append(full_node)
 
         # Append full not as a child of partial node
         # Must choose correct corner to add
         if partial_node.left_endmost.label == Label.FULL:
             endmost_full_node = partial_node.left_endmost
-            endmost_full_node.right_subling = full_node
-            full_node.left_subling = endmost_full_node
+            endmost_full_node.left_subling = full_node
+            full_node.right_subling = endmost_full_node
             partial_node.left_endmost = full_node
         else:
             endmost_full_node = partial_node.right_endmost
-            endmost_full_node.left_subling = full_node
+            endmost_full_node.right_subling = full_node
             full_node.left_subling = endmost_full_node
             partial_node.right_endmost = full_node
 
         full_node.mark_full()
 
+        node.circular_link.remove(partial_node)
+        node.partial_children.remove(partial_node)
+        # Remove all reference to node from node_parent
+        node_parent.circular_link.remove(node)
+
+        # TODO: Special case when only one node is left is needed
+        # XXX: Not sure if could be 0
+        if len(node.circular_link) == 1:
+            node = node.circular_link[0]
+
         # Make empty P-node child of partial node
         if full_node == partial_node.left_endmost:
             endmost_empty_node = partial_node.right_endmost
-            endmost_empty_node.left_subling = node
-            node.right_subling = endmost_empty_node
+            endmost_empty_node.right_subling = node
+            node.left_subling = endmost_empty_node
             partial_node.right_endmost = node
         else:
             endmost_empty_node = partial_node.left_endmost
-            endmost_empty_node.right_subling = node
-            node.left_subling = endmost_empty_node
+            endmost_empty_node.left_subling = node
+            node.right_subling = endmost_empty_node
             partial_node.left_endmost = node
 
         node.mark_empty()
-        partial_node.full_children.append(node)
-        node.full_children.remove(partial_node)
+        partial_node.circular_link.append(node)
+
+        partial_node.parent = node_parent
+        partial_node.mark_partial()
+        node_parent.circular_link.append(partial_node)
 
         print("[Template_P5] 4) result = True")
         return True

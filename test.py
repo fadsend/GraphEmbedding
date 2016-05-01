@@ -16,6 +16,14 @@ def check_consequtive(array, conseq_elements):
                 conseq_elements.remove(array[i + j])
     return True
 
+
+# TODO: Implement PQtree construction from string to allow
+# more easy testing.
+# TODO: Probably should be implemented as PQtree method
+def construct_PQtree(str):
+    return PQtree([], [])
+
+
 class TestReduction(unittest.TestCase):
 
     def test1(self):
