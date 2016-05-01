@@ -115,17 +115,6 @@ class PQnode(object):
     def inc_pertinent_child_count(self):
         self.pertinent_child_count += 1
 
-    def add_child(self, child_node):
-        # self.child_count += 1
-        self.circular_link.append(child_node)
-        # For now always add new node to the end
-        self.endmost_children = child_node
-
-        # Just to make sure that parent reference is correct
-        child_node.parent = self
-
-        # TODO: add more
-
     def copy_node(self, move_data=False):
         new_node = PQnode()
         # new_node.child_count = self.child_count
@@ -252,8 +241,25 @@ class PQnode(object):
         self.mark = Mark.UNMARKED
         self.label = Label.EMPTY
 
+    def add_child(self, node_type, data=None):
+        new_node = PQnode(node_type=node_type, data=data)
+        new_node.parent = self
+
+        if self.node_type == Type.P_NODE:
+            self.circular_link.append(new_node)
+        else:
+            if self.left_endmost is not None:
+                endmost_child = self.right_endmost
+                endmost_child.right_subling = new_node
+                new_node.left_subling = endmost_child
+                self.right_endmost = new_node
+            else:
+                # Actually, Q-node should have at least 3 children,
+                # but let's break the rule for test purpose
+                self.left_endmost = new_node
+                self.right_endmost = new_node
+        return new_node
 
 if __name__ == "__main__":
     import doctest
-
     doctest.testmod()

@@ -4,33 +4,21 @@ import myqueue
 
 class PQtree(object):
 
-    def __init__(self, universe, subset):
+    def __init__(self, universe):
         self.universe = universe
         self.root = None
-        self.construct_tree_with_subset(subset)
-
-    # def __init__(self, universe, subset):
-    #     self.universe = universe
-    #    # self.subset = subset
-    #     self.root = None
-    #     self.construct_tree_with_subset(subset)
+        self.construct_tree()
 
     def reset(self):
         self.root.reset()
 
-    # TODO:Check how tree should be constructed
-    def construct_tree_with_subset(self, subset):
-        self.root = PQnode(node_type=Type.P_NODE, data=None)
-        if len(subset) > 0:
-            sub_root = PQnode(node_type=Type.P_NODE, data=None)
-            self.root.add_child(sub_root)
+    def get_root(self):
+        return self.root
 
+    def construct_tree(self):
+        self.root = PQnode(node_type=Type.P_NODE, data=None)
         for element in self.universe:
-            new_node = PQnode(node_type=Type.LEAF, data=element)
-            if element in subset:
-                sub_root.add_child(new_node)
-            else:
-                self.root.add_child(new_node)
+            self.root.add_child(Type.LEAF, element)
 
     def construct_from_graph(self, graph):
         edges = graph.getEdgeNumbers()
@@ -43,18 +31,13 @@ class PQtree(object):
         for edge in edges:
             self.add_node(self.root, Type.LEAF, edge)
 
-    # def add_node(self, parent, node_type, data):
-    #     # FIXME: deal with new constructor for PQnode
-    #     new_node = PQnode(parent)
-    #     parent.add_child(new_node)
-
     def __str__(self):
-        return self.print_tree(self.root)
+        if self.root is None:
+            return "None"
+        else:
+            return self.print_tree(self.root)
 
     def print_tree(self, node):
-        if node is None:
-            return ""
-
         result = ""
         if node.node_type == Type.Q_NODE:
             result += str(node.id) + ": { "
@@ -98,22 +81,6 @@ class PQtree(object):
             frontier += [str(node.data)]
         return frontier
 
-
-
-
-    @staticmethod
-    def exchange_nodes(old_node: PQnode, new_node: PQnode):
-
-        # TODO: check reference parent
-
-        if old_node.is_endmost_child():
-            if old_node.parent.left_endmost == old_node:
-                old_node.parent.left_endmost = new_node
-            elif old_node.parent.right_endmost == old_node:
-                old_node.parent.right_endmost = new_node
-
-        new_node.parent = old_node.parent
-
     # Template L1
     # Only applicable for leafs
     # If leaf is in subset then mark it as full
@@ -137,11 +104,9 @@ class PQtree(object):
             print("[Template_P1] result = " + str(False))
             return False
 
-        #node.mark_full()
         node.label = Label.FULL
         if not is_root and not node in node.parent.full_children:
             node.parent.full_children.append(node)
-
         return True
 
     def template_p2(self, node: PQnode) -> bool:
@@ -340,11 +305,13 @@ class PQtree(object):
         print("[Template_P5] 4) result = True")
         return True
 
-
     def template_p6(self, node: PQnode) -> bool:
         if node.node_type != Type.P_NODE:
+            print("[Template_P6] 1) result = False")
             return False
-        pass
+
+        print("[Template_P6] 2) result = False")
+        return False
 
 
     def template_q1(self, node: PQnode) -> bool:

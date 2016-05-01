@@ -1,4 +1,4 @@
-from pqnode import Data
+from pqnode import Data, PQnode
 from pqtree import PQtree, reduce_tree
 import unittest
 
@@ -40,7 +40,8 @@ class TestReduction(unittest.TestCase):
 
         test_universe = data
         test_subset = data[1:3]
-        T = PQtree(test_universe, test_subset)
+        T = PQtree(test_universe)
+        T = reduce_tree(T, test_subset)
         tmp = [data[3], data[6], data[5]]
         T = reduce_tree(T, tmp)
         self.assertTrue(check_consequtive(T.get_frontier(), ['3', '6', '5']))
@@ -49,7 +50,8 @@ class TestReduction(unittest.TestCase):
         data = [Data(i) for i in range(0, 10)]
         test_universe = data
         test_subset = [data[i] for i in [1, 3, 5]]
-        T = PQtree(test_universe, test_subset)
+        T = PQtree(test_universe)
+        T = reduce_tree(T, test_subset)
         tmp = [data[i] for i in [5, 7]]
         T = reduce_tree(T, tmp)
         self.assertTrue(check_consequtive(T.get_frontier(), ['7', '5', '1', '3']))
@@ -58,7 +60,8 @@ class TestReduction(unittest.TestCase):
         data = [Data(i) for i in range(0, 10)]
         test_universe = data
         test_subset = [data[i] for i in [0, 1, 2, 3, 4, 5]]
-        T = PQtree(test_universe, test_subset)
+        T = PQtree(test_universe)
+        T = reduce_tree(T, test_subset)
         tmp = [data[i] for i in [3, 4, 5]]
         T = reduce_tree(T, tmp)
         tmp = [data[i] for i in [2, 4, 5]]
@@ -68,6 +71,7 @@ class TestReduction(unittest.TestCase):
         T = reduce_tree(T, tmp)
         print(T)
         self.assertTrue(check_consequtive(T.get_frontier(), ['0', '1', '2', '3', '4', '5', '7']))
+
 
 if __name__ == "__main__":
     unittest.main()
