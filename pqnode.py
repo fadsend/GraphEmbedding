@@ -154,6 +154,15 @@ class PQnode(object):
 
         self.full_children = []
 
+    # Useful to move empty children after full were already moved
+    def move_children(self, new_node):
+        for child in self.circular_link:
+            self.circular_link.remove(child)
+            new_node.circular_link.append(child)
+            child.parent = new_node
+
+        self.circular_link = []
+
     # Replaces child of node depending on current type
     def replace_child(self, old_child, new_child):
         if self.node_type == Type.P_NODE:
@@ -183,6 +192,27 @@ class PQnode(object):
     def is_endmost_child(self):
         return self.left_subling is not None or \
                self.right_subling is not None
+
+    def is_endmost_child_has_label(self, label):
+        if self.left_endmost is None or self.right_endmost is None:
+            return False
+
+        return self.left_endmost.label == label or \
+               self.right_endmost.label == label
+
+    def get_endmost_child_with_label(self, label):
+        if self.left_endmost is None or self.right_endmost is None:
+            return None
+
+        if self.left_endmost.label == label:
+            return self.left_endmost
+
+        if self.right_endmost.label == label:
+            return self.right_endmost
+
+        return None
+
+
 
     def mark_full(self):
         self.label = Label.FULL

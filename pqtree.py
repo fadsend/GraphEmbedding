@@ -257,21 +257,73 @@ class PQtree(object):
         print("Template_P4 result True")
         return True
 
-
     def template_p5(self, node: PQnode) -> bool:
         if node.node_type != Type.P_NODE:
-            print("[Template_P5] result = False")
+            print("[Template_P5] 1) result = False")
             return False
 
         if len(node.partial_children) != 1:
-            print("[Template_P5] result = False")
+            print("[Template_P5] 2) result = False")
             return False
 
-        partial_node = node.partial_children[0]
-        # TODO: complete implementation
+        node_parent = node.parent
+        assert node_parent is not None
 
-        print("[Template_P5] result = False")
-        return False
+        partial_node = node.partial_children[0]
+        assert partial_node.node_type == Type.Q_NODE
+
+        # XXX: not sure why is needed
+        empty_child = partial_node.get_endmost_child_with_label(Label.EMPTY)
+        full_child = partial_node.get_endmost_child_with_label(Label.FULL)
+
+        if not empty_child or not full_child:
+            print("[Template_P5] 3) result = False")
+            return False
+
+        # Combine full nodes and move them
+        if len(node.full_children) > 1:
+            full_node = PQnode()
+            full_node.node_type = Type.P_NODE
+            node.move_full_children(full_node)
+        else:
+            full_node = full_child
+
+        full_node.parent = partial_node
+        partial_node.full_children.append(full_node)
+
+        # Append full not as a child of partial node
+        # Must choose correct corner to add
+        if partial_node.left_endmost.label == Label.FULL:
+            endmost_full_node = partial_node.left_endmost
+            endmost_full_node.right_subling = full_node
+            full_node.left_subling = endmost_full_node
+            partial_node.left_endmost = full_node
+        else:
+            endmost_full_node = partial_node.right_endmost
+            endmost_full_node.left_subling = full_node
+            full_node.left_subling = endmost_full_node
+            partial_node.right_endmost = full_node
+
+        full_node.mark_full()
+
+        # Make empty P-node child of partial node
+        if full_node == partial_node.left_endmost:
+            endmost_empty_node = partial_node.right_endmost
+            endmost_empty_node.left_subling = node
+            node.right_subling = endmost_empty_node
+            partial_node.right_endmost = node
+        else:
+            endmost_empty_node = partial_node.left_endmost
+            endmost_empty_node.right_subling = node
+            node.left_subling = endmost_empty_node
+            partial_node.left_endmost = node
+
+        node.mark_empty()
+        partial_node.full_children.append(node)
+        node.full_children.remove(partial_node)
+
+        print("[Template_P5] 4) result = True")
+        return True
 
 
     def template_p6(self, node: PQnode) -> bool:
@@ -298,11 +350,29 @@ class PQtree(object):
 
 
     def template_q2(self, node: PQnode) -> bool:
-        if node.node_type != Type.Q_NODE:
+        if node.node_type != Type.Q_NODE or \
+           len(node.partial_children) > 0:
             print("[Template_Q2] result = False")
             return False
-        print("[Template_Q2] result = False")
-        return False
+
+        has_partial_child = len(node.partial_children) >= 1
+        has_full_child = len(node.full_children) >= 1
+
+        if has_full_child and not node.is_endmost_child_has_label(Label.FULL):
+            print("[Template_Q2] result = False")
+            return False
+
+        if not has_full_child and not node.is_endmost_child_has_label(Label.PARTIAL):
+            print("[Template_Q2] result = False")
+            return False
+
+        if has_partial_child:
+            pass
+
+        node.mark_partial()
+
+        print("[Template_Q2] result = True")
+        return True
 
     def template_q3(self, node: PQnode) -> bool:
         if node.node_type != Type.Q_NODE:
@@ -444,6 +514,7 @@ def __reduce(tree, subset):
             if not tree.template_l1(node) and \
                not tree.template_p1(node, False) and \
                not tree.template_p3(node) and \
+               not tree.template_p5(node) and \
                not tree.template_q1(node) and \
                not tree.template_q2(node):
                 return PQtree([], [])
