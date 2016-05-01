@@ -175,9 +175,8 @@ class PQtree(object):
     def template_p4(self, node: PQnode) -> bool:
         if node.node_type != Type.P_NODE or \
            len(node.partial_children) != 1:
+            print("[Template_P4] 1) result = False")
             return False
-
-        print("Template_P4 entered")
 
         # Should be Q-node
         partial_child = node.partial_children[0]
@@ -189,7 +188,7 @@ class PQtree(object):
             partial_empty = partial_child.left_endmost
 
         if partial_full is None or partial_empty is None:
-            print("Template_P4 result False")
+            print("[Template_P4] 2) result = False")
             return False
 
         if len(node.full_children) == 1:
@@ -219,7 +218,7 @@ class PQtree(object):
 
         # TODO: if node has only one child, delete it
 
-        print("Template_P4 result True")
+        print("[Template_P4] 3) result True")
         return True
 
     def template_p5(self, node: PQnode) -> bool:
@@ -278,8 +277,7 @@ class PQtree(object):
         # Remove all reference to node from node_parent
         node_parent.circular_link.remove(node)
 
-        # TODO: Special case when only one node is left is needed
-        # XXX: Not sure if could be 0
+        # TODO: Not sure if could be 0
         if len(node.circular_link) == 1:
             node = node.circular_link[0]
 
@@ -390,13 +388,13 @@ def get_max_consecutive_blocked_sublings_list(node):
 
     # At first, got to the left direction and add blocked nodes
     left_subling = node.get_left_subling()
-    while left_subling is not None and left_subling.get_mark() == Mark.BLOCKED:
+    while left_subling is not None and left_subling.mark == Mark.BLOCKED:
         result_list.append(left_subling)
         left_subling = left_subling.get_left_subling()
 
     # Now to the right. We should not include node to the list, since it's already unblocked.
     right_subling = node.get_right_subling()
-    while right_subling is not None and right_subling.get_mark() == Mark.BLOCKED:
+    while right_subling is not None and right_subling.mark == Mark.BLOCKED:
         result_list.append(right_subling)
         right_subling = right_subling.get_right_subling()
 
@@ -417,7 +415,7 @@ def __bubble(tree, subset):
 
     while QUEUE.size() + BLOCK_COUNT + OFF_THE_TOP > 1:
         if QUEUE.size() == 0:
-            return PQtree([], [])
+            return PQtree([])
 
         # Get new node from queue and set BLOCKED mark by default
         node = QUEUE.pop()
@@ -429,8 +427,8 @@ def __bubble(tree, subset):
 
         # If some subling is unblocked, then set parent pointer and mark node as unblocked
         if len(unblocked_sublings) > 0:
-            node.set_parent(unblocked_sublings[0].get_parent())
-            node.set_mark(Mark.UNBLOCKED)
+            node.parent = unblocked_sublings[0].parent
+            node.mark = Mark.UNBLOCKED
             # TODO: should pertinent child count be updated for parent node?
 
         # If not an interior child of Qnode, than mark as unblocked
@@ -448,15 +446,15 @@ def __bubble(tree, subset):
 
                 # TODO: is node_parent not None here????
                 for blocked_node in max_consecutive_blocked_sublings_list:
-                    blocked_node.set_mark(Mark.UNBLOCKED)
-                    blocked_node.set_parent(node_parent)
+                    blocked_node.mark = Mark.UNBLOCKED
+                    blocked_node.parent = node_parent
                     node_parent.pertinent_child_count += 1
 
             # TODO: not sure why this check is needed
             if node_parent is None:
                 OFF_THE_TOP = 1
             else:
-                node_parent.inc_pertinent_child_count()
+                node_parent.pertinent_child_count += 1
                 if node_parent.mark == Mark.UNMARKED:
                     QUEUE.push(node_parent)
                     node_parent.mark = Mark.QUEUED
@@ -499,7 +497,7 @@ def __reduce(tree, subset):
                not tree.template_p5(node) and \
                not tree.template_q1(node) and \
                not tree.template_q2(node):
-                return PQtree([], [])
+                return PQtree([])
 
         else:
             if not tree.template_l1(node) and \
@@ -510,7 +508,7 @@ def __reduce(tree, subset):
                not tree.template_q1(node) and \
                not tree.template_q2(node) and \
                not tree.template_q3(node):
-                return PQtree([], [])
+                return PQtree([])
 
     return tree
 

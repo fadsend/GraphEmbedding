@@ -1,10 +1,28 @@
-from pqnode import Data, PQnode
+from pqnode import Data, Type
 from pqtree import PQtree, reduce_tree
 import unittest
 
 
-def check_consequtive(array, conseq_elements):
+def convert_array(array):
+    map(lambda x: str(x), array)
+    return array
+
+
+def check_consecutive(array, consecutive_elements_list):
     print("Result: " + str(array))
+
+    if consecutive_elements_list == []:
+        return False
+
+    for consecutive in consecutive_elements_list:
+        consecutive = convert_array(consecutive)
+        if not __check_consequtive(array, consecutive):
+            return False
+
+    return True
+
+
+def __check_consequtive(array, conseq_elements):
     if len(array) < len(conseq_elements):
         return False
     for i in range(len(array) - len(conseq_elements)):
@@ -17,26 +35,13 @@ def check_consequtive(array, conseq_elements):
     return True
 
 
-# TODO: Implement PQtree construction from string to allow
-# more easy testing.
-# TODO: Probably should be implemented as PQtree method
-def construct_PQtree(str):
-    return PQtree([], [])
-
-
 class TestReduction(unittest.TestCase):
 
     def test1(self):
         """
         Simple test in which P1 and P2 templates are used
         """
-        data = [Data(0),
-                Data(1),
-                Data(2),
-                Data(3),
-                Data(4),
-                Data(5),
-                Data(6)]
+        data = [Data(i) for i in range(0, 7)]
 
         test_universe = data
         test_subset = data[1:3]
@@ -44,7 +49,7 @@ class TestReduction(unittest.TestCase):
         T = reduce_tree(T, test_subset)
         tmp = [data[3], data[6], data[5]]
         T = reduce_tree(T, tmp)
-        self.assertTrue(check_consequtive(T.get_frontier(), ['3', '6', '5']))
+        self.assertTrue(check_consecutive(T.get_frontier(), [[1, 2], [3, 6, 5]]))
 
     def test2(self):
         data = [Data(i) for i in range(0, 10)]
@@ -54,7 +59,7 @@ class TestReduction(unittest.TestCase):
         T = reduce_tree(T, test_subset)
         tmp = [data[i] for i in [5, 7]]
         T = reduce_tree(T, tmp)
-        self.assertTrue(check_consequtive(T.get_frontier(), ['7', '5', '1', '3']))
+        self.assertTrue(check_consecutive(T.get_frontier(), [[1, 3, 5], [5, 7]]))
 
     def test3(self):
         data = [Data(i) for i in range(0, 10)]
@@ -70,8 +75,33 @@ class TestReduction(unittest.TestCase):
         print("------------------")
         T = reduce_tree(T, tmp)
         print(T)
-        self.assertTrue(check_consequtive(T.get_frontier(), ['0', '1', '2', '3', '4', '5', '7']))
+        self.assertTrue(check_consecutive(T.get_frontier(), [[0, 1, 2, 3, 4, 5],
+                                                             [3, 4, 5], [2, 4, 5],
+                                                             [0, 3, 7]]))
 
+    # Construct tree for checking P6 template
+    def test4(self):
+        tree = PQtree([])
+        root = tree.get_root()
+        data = [Data(i) for i in range(0, 10)]
+        root.add_child(Type.LEAF, data[9])
+        root.add_child(Type.LEAF, data[4])
+
+        q1 = root.add_child(Type.Q_NODE, None)
+        q1.add_child(Type.LEAF, data[5])
+        q1.add_child(Type.LEAF, data[0])
+        q1.add_child(Type.LEAF, data[6])
+
+        root.add_child(Type.LEAF, data[2])
+        root.add_child(Type.LEAF, data[7])
+
+        q2 = root.add_child(Type.Q_NODE, None)
+        q2.add_child(Type.LEAF, data[1])
+        q2.add_child(Type.LEAF, data[8])
+        q2.add_child(Type.LEAF, data[3])
+
+        tree = reduce_tree(tree, [data[i] for i in [0, 7, 2, 6, 3, 8]])
+        self.assertTrue(check_consecutive(tree.get_frontier(), [[0, 2, 3, 6, 7, 8]]))
 
 if __name__ == "__main__":
     unittest.main()
