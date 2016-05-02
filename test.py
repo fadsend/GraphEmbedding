@@ -119,7 +119,7 @@ class TestReduction(unittest.TestCase):
 
         index = 0
         for child in qnode.iter_children():
-            self.assertEqual(child, new_data[index])
+            self.assertEqual(child.data, new_data[index])
             index += 1
 
 

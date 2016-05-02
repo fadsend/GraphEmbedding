@@ -41,10 +41,11 @@ class PQtree(object):
         result = ""
         if node.node_type == Type.Q_NODE:
             result += str(node.id) + ": { "
-            child = node.left_endmost
-            while child is not None:
+            # child = node.left_endmost
+            # while child is not None:
+            for child in node.iter_children():
                 result += self.print_tree(child) + ", "
-                child = child.right_subling
+                # child = child.right_subling
 
             # Remove last comma
             # TODO: Do it in a better way
@@ -53,7 +54,8 @@ class PQtree(object):
 
         elif node.node_type == Type.P_NODE:
             result += str(node.id) + ": [ "
-            for child in node.circular_link:
+            # for child in node.circular_link:
+            for child in node.iter_children():
                 result += self.print_tree(child) + ", "
             # Remove last comma
             # TODO: Do it in a better way
@@ -69,14 +71,17 @@ class PQtree(object):
 
     def __get_frontier(self, node):
         frontier = []
-        if node.node_type == Type.P_NODE:
-            for child in node.circular_link:
+        if node.node_type != Type.LEAF:
+            for child in node.iter_children():
                 frontier += self.__get_frontier(child)
-        elif node.node_type == Type.Q_NODE:
-            child = node.left_endmost
-            while child is not None:
-                frontier += self.__get_frontier(child)
-                child = child.right_subling
+        # if node.node_type == Type.P_NODE:
+        #     for child in node.circular_link:
+        #         frontier += self.__get_frontier(child)
+        # elif node.node_type == Type.Q_NODE:
+        #     child = node.left_endmost
+        #     while child is not None:
+        #         frontier += self.__get_frontier(child)
+        #         child = child.right_subling
         else:
             frontier += [str(node.data)]
         return frontier
@@ -150,7 +155,7 @@ class PQtree(object):
             node.move_full_children(full_child)
 
         full_child.parent = new_qnode
-        new_qnode.right_endmost = full_child
+        new_qnode.endmost_children[0] = full_child
         full_child.mark_full()
 
         # If only one empty child
@@ -161,16 +166,15 @@ class PQtree(object):
             empty_child = node
 
         empty_child.parent = new_qnode
-        new_qnode.left_endmost = empty_child
+        new_qnode.endmost_children[1] = empty_child
         empty_child.mark_empty()
 
-        empty_child.right_subling = full_child
-        full_child.left_subling = empty_child
+        empty_child.immediate_sublings[0] = full_child
+        full_child.immediate_sublings[0] = empty_child
 
         print("Template 3 exit with True")
 
         return True
-
 
     def template_p4(self, node: PQnode) -> bool:
         if node.node_type != Type.P_NODE or \
@@ -180,43 +184,32 @@ class PQtree(object):
 
         # Should be Q-node
         partial_child = node.partial_children[0]
-        if partial_child.left_endmost == Label.FULL:
-            partial_full = partial_child.left_endmost
-            partial_empty = partial_child.right_endmost
-        else:
-            partial_full = partial_child.right_endmost
-            partial_empty = partial_child.left_endmost
+        empty_child = partial_child.get_endmost_child_with_label(Label.EMPTY)
+        full_child = partial_child.get_endmost_child_with_label(Label.FULL)
 
-        if partial_full is None or partial_empty is None:
+        if not empty_child or not full_child:
             print("[Template_P4] 2) result = False")
             return False
 
-        if len(node.full_children) == 1:
-            full_child = node.full_children[0]
-            node.full_children = []
-            node.circular_link.remove(full_child)
-        else:
-            full_child = PQnode()
-            full_child.node_type = Type.P_NODE
-            node.move_full_children(full_child)
+        if len(node.full_children) > 0:
+            if len(node.full_children) == 1:
+                new_full_node = node.full_children[0]
+                node.full_children = []
+                node.circular_link.remove(new_full_node)
+            else:
+                new_full_node = PQnode()
+                new_full_node.node_type = Type.P_NODE
+                node.move_full_children(new_full_node)
 
-        # TODO: refactor a little bit
-        if partial_child.right_endmost.label == Label.FULL:
-            endmost_full = partial_child.right_endmost
-            full_child.parent = partial_child
-            partial_child.right_endmost = full_child
-            full_child.mark_full()
-            full_child.left_subling = endmost_full
-            endmost_full.right_subling = full_child
-        else:
-            endmost_full = partial_child.left_endmost
-            full_child.parent = partial_child
-            partial_child.left_endmost = full_child
-            full_child.mark_full()
-            full_child.right_subling = endmost_full
-            endmost_full.left_subling = full_child
+            new_full_node.parent = partial_child
+            new_full_node.mark_full()
+            partial_child.replace_endmost_child(full_child, new_full_node)
+            full_child.add_sibling(new_full_node)
+            new_full_node.add_sibling(full_child)
 
-        # TODO: if node has only one child, delete it
+        # TODO: case when P-node has only one child
+        if len(node.circular_link) == 1:
+            print("!@#!@#!@#!@")
 
         print("[Template_P4] 3) result True")
         return True
@@ -229,6 +222,10 @@ class PQtree(object):
         if len(node.partial_children) != 1:
             print("[Template_P5] 2) result = False")
             return False
+
+        # # FIXME: XXX
+        # print("[Template_P5] 10) result = False")
+        # return False
 
         node_parent = node.parent
         assert node_parent is not None
@@ -341,7 +338,8 @@ class PQtree(object):
 
         # Add full node to the partial Q-node
         if len(node.full_children) >= 1:
-            partial_qnode1.append_full_node(full_node)
+            pass
+            #partial_qnode1.append_full_node(full_node)
 
 
         print("[Template_P6] 2) result = True")
@@ -353,12 +351,15 @@ class PQtree(object):
             print("[Template_Q1] result = " + str(False))
             return False
 
-        child = node.left_endmost
-        while child is not None:
+        for child in node.iter_children():
             if child.label != Label.FULL:
+        #
+        # child = node.left_endmost
+        # while child is not None:
+        #     if child.label != Label.FULL:
                 print("[Template_Q1] result = " + str(False))
                 return False
-            child = child.right_subling
+            # child = child.right_subling
 
         node.mark_full()
         print("[Template_Q1] result = " + str(True))
@@ -374,11 +375,11 @@ class PQtree(object):
         has_partial_child = len(node.partial_children) >= 1
         has_full_child = len(node.full_children) >= 1
 
-        if has_full_child and not node.is_endmost_child_has_label(Label.FULL):
+        if has_full_child and not node.get_endmost_child_with_label(Label.FULL):
             print("[Template_Q2] result = False")
             return False
 
-        if not has_full_child and not node.is_endmost_child_has_label(Label.PARTIAL):
+        if not has_full_child and not node.get_endmost_child_with_label(Label.PARTIAL):
             print("[Template_Q2] result = False")
             return False
 
@@ -403,7 +404,7 @@ class PQtree(object):
 
         count = 0
         for subling in node.immediate_sublings:
-            if subling.mark == Mark.BLOCKED:
+            if subling is not None and subling.mark == Mark.BLOCKED:
                 subling.parent = node.parent
                 subling.mark = Mark.UNBLOCKED
                 count += 1

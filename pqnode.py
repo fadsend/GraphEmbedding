@@ -46,7 +46,7 @@ class PnodeIterator:
 # TODO: add support for pseudonode later
 class QnodeIterator:
     def __init__(self, node):
-        # self.current = node.endmost_children[0]
+        self.current = node.endmost_children[0]
         self.prev = None
 
     def __iter__(self):
@@ -58,10 +58,11 @@ class QnodeIterator:
 
         child_to_return = self.current
 
-        self.current = self.current.immediate_subling[0]
-        if self.current == self.prev:
-            self.current = self.current.immediate_subling[1]
+        tmp_node = self.current.immediate_sublings[0]
+        if tmp_node == self.prev:
+            tmp_node = self.current.immediate_sublings[1]
         self.prev = self.current
+        self.current = tmp_node
         return child_to_return
 
 
@@ -200,18 +201,71 @@ class PQnode(object):
 
     # Replaces child of node depending on current type
     def replace_child(self, old_child, new_child):
+        assert self.node_type != Type.LEAF
+
         if self.node_type == Type.P_NODE:
             self.circular_link.remove(old_child)
             self.circular_link.append(new_child)
         else:
-            if old_child == self.left_endmost:
-                self.left_endmost = new_child
+            # if old_child == self.left_endmost:
+            #    self.left_endmost = new_child
+            #
+            # if old_child == self.right_endmost:
+            #     self.right_endmost = new_child
+            #
+            # new_child.left_subling = old_child.left_subling
+            # new_child.right_subling = old_child.right_subling
+            old_child.replace(new_child)
 
-            if old_child == self.right_endmost:
-                self.right_endmost = new_child
+    def clear_siblings(self):
+        for i in range(2):
+            self.immediate_sublings[i] = None
 
-            new_child.left_subling = old_child.left_subling
-            new_child.right_subling = old_child.right_subling
+    def replace(self, new_node):
+        assert self.node_type == Type.Q_NODE
+
+        new_node.clear_siblings()
+
+        for i in range(2):
+            if self.parent.endmost_children[i] == self:
+                self.parent.endmost_children[i] = new_node
+            if self.immediate_sublings[i] is not None:
+                self.immediate_sublings[i].replace_sibling(self, new_node)
+
+        self.clear_siblings()
+        self.parent = None
+
+    def count_siblings(self):
+        assert self.node_type == Type.Q_NODE
+        count = 0
+        for i in range(2):
+            if self.immediate_sublings is not None:
+                count += 1
+        return count
+
+    def replace_sibling(self, old_node, new_node):
+        assert self.node_type == Type.Q_NODE
+        assert old_node.node_type == Type.Q_NODE
+        assert new_node.node_type == Type.Q_NODE
+
+        for i in range(2):
+            if self.immediate_sublings[i] is not None and \
+               self.immediate_sublings[i] == old_node:
+                self.immediate_sublings[i] = new_node
+        new_node.immediate_sublings[new_node.count_siblings()] = self
+
+    def add_sibling(self, node):
+        idx = self.get_num_sublings()
+        assert idx < 2
+        self.immediate_sublings[idx] = node
+
+    def replace_endmost_child(self, old_node, new_node):
+        assert self.node_type == Type.Q_NODE
+        for i in range(2):
+            if self.endmost_children[i] == old_node:
+                self.endmost_children[i] = new_node
+                return
+        return
 
     # Replace old_child with new_child which is partial q-node
     def replace_partial_child(self, old_child, new_child):
@@ -228,22 +282,21 @@ class PQnode(object):
         return self.left_subling is not None or \
                self.right_subling is not None
 
-    def is_endmost_child_has_label(self, label):
-        if self.left_endmost is None or self.right_endmost is None:
-            return False
-
-        return self.left_endmost.label == label or \
-               self.right_endmost.label == label
+    # def is_endmost_child_has_label(self, label):
+    #     if self.left_endmost is None or self.right_endmost is None:
+    #         return False
+    #
+    #     return self.left_endmost.label == label or \
+    #            self.right_endmost.label == label
 
     def get_endmost_child_with_label(self, label):
-        if self.left_endmost is None or self.right_endmost is None:
-            return None
+        assert self.node_type == Type.Q_NODE
 
-        if self.left_endmost.label == label:
-            return self.left_endmost
-
-        if self.right_endmost.label == label:
-            return self.right_endmost
+        for i in range(2):
+            if self.endmost_children[i] is None:
+                return None
+            if self.endmost_children[i].label == label:
+                return self.endmost_children[i]
 
         return None
 
@@ -286,6 +339,7 @@ class PQnode(object):
         self.mark = Mark.UNMARKED
         self.label = Label.EMPTY
 
+    # FIXME: Update
     def add_child(self, node_type, data=None):
         new_node = PQnode(node_type=node_type, data=data)
         new_node.parent = self
@@ -293,37 +347,40 @@ class PQnode(object):
         if self.node_type == Type.P_NODE:
             self.circular_link.append(new_node)
         else:
-            if self.left_endmost is not None:
-                endmost_child = self.right_endmost
-                endmost_child.right_subling = new_node
-                new_node.left_subling = endmost_child
-                self.right_endmost = new_node
+            if self.endmost_children[0] is not None:
+                tmp_node = self.endmost_children[1]
+                self.replace_endmost_child(tmp_node, new_node)
+                if tmp_node is not None:
+                    tmp_node.add_sibling(new_node)
+                    new_node.add_sibling(tmp_node)
+                else:
+                    self.endmost_children[0].add_sibling(new_node)
+                    new_node.add_sibling(self.endmost_children[0])
             else:
                 # Actually, Q-node should have at least 3 children,
                 # but let's break the rule for test purpose
-                self.left_endmost = new_node
-                self.right_endmost = new_node
+                self.endmost_children[0] = new_node
         return new_node
 
     # Append full node to the Q-node
-    def append_full_node(self, full_node):
-        assert self.node_type == Type.Q_NODE
-        assert self.left_endmost.label == Label.FULL or \
-               self.right_endmost.label == Label.FULL
-
-        if self.left_endmost.label == Label.FULL:
-            self.left_endmost.left_subling = full_node
-            full_node.right_subling = self.left_endmost
-            self.left_endmost = full_node
-        else:
-            self.right_endmost.right_subling = full_node
-            full_node.left_subling = self.right_endmost
-            self.right_endmost = full_node
-
-        full_node.parent = self.parent
-        if self.parent is not None:
-            full_node.parent.circular_link.append(full_node)
-        full_node.mark_full()
+    # def append_full_node(self, full_node):
+    #     assert self.node_type == Type.Q_NODE
+    #     assert self.left_endmost.label == Label.FULL or \
+    #            self.right_endmost.label == Label.FULL
+    #
+    #     if self.left_endmost.label == Label.FULL:
+    #         self.left_endmost.left_subling = full_node
+    #         full_node.right_subling = self.left_endmost
+    #         self.left_endmost = full_node
+    #     else:
+    #         self.right_endmost.right_subling = full_node
+    #         full_node.left_subling = self.right_endmost
+    #         self.right_endmost = full_node
+    #
+    #     full_node.parent = self.parent
+    #     if self.parent is not None:
+    #         full_node.parent.circular_link.append(full_node)
+    #     full_node.mark_full()
 
     def iter_children(self):
         assert self.node_type != Type.LEAF
@@ -333,9 +390,6 @@ class PQnode(object):
         else:
             return QnodeIterator(self)
 
-
-
 if __name__ == "__main__":
     import doctest
-
     doctest.testmod()
