@@ -20,6 +20,51 @@ class Mark(Enum):
     UNBLOCKED = 4
 
 
+class Orientation(Enum):
+    LEFT = 1
+    RIGHT = 2
+
+
+# FIXME: use inheritance for iterators
+class PnodeIterator:
+    def __init__(self, node):
+        assert node is not None
+        self.i = 0
+        self.node = node
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if len(self.node.circular_link) <= self.i:
+            raise StopIteration
+        child_to_return = self.node.circular_link[self.i]
+        self.i += 1
+        return child_to_return
+
+
+# TODO: add support for pseudonode later
+class QnodeIterator:
+    def __init__(self, node):
+        self.child = node
+        self.current = None
+        self.prev = None
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current is None:
+            raise StopIteration
+
+        next_child = self.current.immediate_subling[0]
+        if next_child == self.prev:
+            next_child = self.current.immediate_subling[1]
+        self.prev = self.current
+        self.current = next_child
+        return next_child
+
+
 # Data class to store info in nodes. Also needed for cross-reference
 # with node to speed up computations.
 class Data(object):
@@ -50,6 +95,7 @@ class PQnode(object):
         # Reference to the last node's child. Used only by Q-node.
         self.left_endmost = None
         self.right_endmost = None
+        self.endmost_children = [self.left_endmost, self.right_endmost]
 
         # Set of full node's children
         # TODO: change to linked list later
@@ -61,6 +107,7 @@ class PQnode(object):
         # For interior children of Q-node it is (None, None)
         self.left_subling = None
         self.right_subling = None
+        self.immediate_sublings = [self.left_subling, self.right_subling]
 
         # Node's label: EMPTY, FULL or PARTIAL
         self.label = Label.EMPTY
@@ -100,10 +147,9 @@ class PQnode(object):
 
     def get_num_sublings(self):
         count = 0
-        if self.left_subling is not None:
-            count += 1
-        if self.right_subling is not None:
-            count += 1
+        for subling in self.immediate_sublings:
+            if subling is not None:
+                count += 1
         return count
 
     def set_pertinent_child_count(self, new_value):
@@ -201,8 +247,6 @@ class PQnode(object):
 
         return None
 
-
-
     def mark_full(self):
         self.label = Label.FULL
         if self.parent is not None and \
@@ -215,10 +259,8 @@ class PQnode(object):
     def mark_partial(self):
         self.label = Label.PARTIAL
         if self.parent is not None and \
-           self not in self.parent.partial_children:
+                        self not in self.parent.partial_children:
             self.parent.partial_children.append(self)
-            # self.parent.pertinent_child_count += 1
-            # self.parent.pertinent_leaf_count += self.pertinent_leaf_count
 
     def __str__(self):
         return str(self.data)
@@ -260,6 +302,37 @@ class PQnode(object):
                 self.right_endmost = new_node
         return new_node
 
+    # Append full node to the Q-node
+    def append_full_node(self, full_node):
+        assert self.node_type == Type.Q_NODE
+        assert self.left_endmost.label == Label.FULL or \
+               self.right_endmost.label == Label.FULL
+
+        if self.left_endmost.label == Label.FULL:
+            self.left_endmost.left_subling = full_node
+            full_node.right_subling = self.left_endmost
+            self.left_endmost = full_node
+        else:
+            self.right_endmost.right_subling = full_node
+            full_node.left_subling = self.right_endmost
+            self.right_endmost = full_node
+
+        full_node.parent = self.parent
+        if self.parent is not None:
+            full_node.parent.circular_link.append(full_node)
+        full_node.mark_full()
+
+    def iter_children(self):
+        assert self.node_type != Type.LEAF
+
+        if self.node_type == Type.P_NODE:
+            return PnodeIterator(self)
+        else:
+            return QnodeIterator(self)
+
+
+
 if __name__ == "__main__":
     import doctest
+
     doctest.testmod()

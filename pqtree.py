@@ -236,10 +236,8 @@ class PQtree(object):
         partial_node = node.partial_children[0]
         assert partial_node.node_type == Type.Q_NODE
 
-        # XXX: not sure why is needed
         empty_child = partial_node.get_endmost_child_with_label(Label.EMPTY)
         full_child = partial_node.get_endmost_child_with_label(Label.FULL)
-
         if not empty_child or not full_child:
             print("[Template_P5] 3) result = False")
             return False
@@ -308,8 +306,46 @@ class PQtree(object):
             print("[Template_P6] 1) result = False")
             return False
 
-        print("[Template_P6] 2) result = False")
-        return False
+        if len(node.partial_children) != 2:
+            print("[Template_P6] 2) result = False")
+            return False
+
+        partial_qnode1 = node.partial_children[0]
+        assert partial_qnode1.node_type == Type.Q_NODE
+
+        empty_child1 = partial_qnode1.get_endmost_child_with_label(Label.EMPTY)
+        full_child1 = partial_qnode1.get_endmost_child_with_label(Label.FULL)
+        if not empty_child1 or not full_child1:
+            print("[Template_P6] 3) result = False")
+            return False
+
+        partial_qnode2 = node.partial_children[1]
+        assert partial_qnode2.node_type == Type.Q_NODE
+
+        empty_child2 = partial_qnode2.get_endmost_child_with_label(Label.EMPTY)
+        full_child2 = partial_qnode2.get_endmost_child_with_label(Label.FULL)
+        if not empty_child2 or not full_child2:
+            print("[Template_P6] 4) result = False")
+            return False
+
+        # At first, create P-node for full children of node
+        if len(node.full_children) > 1:
+            full_node = PQnode()
+            full_node.node_type = Type.P_NODE
+            node.move_full_children(full_node)
+        # TODO: add special case for 0 full_children
+        else:
+            full_node = node.full_children[0]
+            node.full_children = []
+            node.circular_link.remove(full_node)
+
+        # Add full node to the partial Q-node
+        if len(node.full_children) >= 1:
+            partial_qnode1.append_full_node(full_node)
+
+
+        print("[Template_P6] 2) result = True")
+        return True
 
 
     def template_q1(self, node: PQnode) -> bool:
@@ -362,6 +398,24 @@ class PQtree(object):
         print("[Template_Q3] result = False")
         return False
 
+    def unblock_sublings(self, node):
+        assert node.mark == Mark.UNBLOCKED
+
+        count = 0
+        for subling in node.immediate_sublings:
+            if subling.mark == Mark.BLOCKED:
+                subling.parent = node.parent
+                subling.mark = Mark.UNBLOCKED
+                count += 1
+                count += self.unblock_sublings(subling)
+        return count
+
+    def filter_sublings(self, node: PQnode, mark: Mark) -> list:
+        sublings_to_return = []
+        for sub in node.immediate_sublings:
+            if sub and sub.mark == mark:
+                sublings_to_return.append(sub)
+        return sublings_to_return
 
 
 # Global variables
@@ -373,32 +427,6 @@ BLOCKED_NODES = 0
 OFF_THE_TOP = 0
 # Queue of processed nodes
 QUEUE = None
-
-
-def filter_sublings(sublings: tuple, mark: Mark) -> list:
-    sublings_to_return = []
-    for sub in sublings:
-        if sub and sub.mark == mark:
-            sublings_to_return.append(sub)
-    return sublings_to_return
-
-
-def get_max_consecutive_blocked_sublings_list(node):
-    result_list = []
-
-    # At first, got to the left direction and add blocked nodes
-    left_subling = node.get_left_subling()
-    while left_subling is not None and left_subling.mark == Mark.BLOCKED:
-        result_list.append(left_subling)
-        left_subling = left_subling.get_left_subling()
-
-    # Now to the right. We should not include node to the list, since it's already unblocked.
-    right_subling = node.get_right_subling()
-    while right_subling is not None and right_subling.mark == Mark.BLOCKED:
-        result_list.append(right_subling)
-        right_subling = right_subling.get_right_subling()
-
-    return result_list
 
 
 def __bubble(tree, subset):
@@ -422,33 +450,26 @@ def __bubble(tree, subset):
         node.mark = Mark.BLOCKED
 
         # Get list of blocked/unblocked sublings
-        blocked_sublings = filter_sublings(node.get_sublings(), Mark.BLOCKED)
-        unblocked_sublings = filter_sublings(node.get_sublings(), Mark.UNBLOCKED)
+        blocked_sublings = tree.filter_sublings(node, Mark.BLOCKED)
+        unblocked_sublings = tree.filter_sublings(node, Mark.UNBLOCKED)
 
         # If some subling is unblocked, then set parent pointer and mark node as unblocked
         if len(unblocked_sublings) > 0:
             node.parent = unblocked_sublings[0].parent
             node.mark = Mark.UNBLOCKED
-            # TODO: should pertinent child count be updated for parent node?
-
         # If not an interior child of Qnode, than mark as unblocked
         elif node.get_num_sublings() < 2:
             node.mark = Mark.UNBLOCKED
 
         if node.mark == Mark.UNBLOCKED:
             node_parent = node.parent
-            max_consecutive_blocked_sublings_list = []
+            unblocked_sublings_count = 0
 
             # Now, if node has been unblocked, then we should make all adjacent previously blocked
             # sublings unblocked and set parent pointer to them
             if len(blocked_sublings) > 0:
-                max_consecutive_blocked_sublings_list = get_max_consecutive_blocked_sublings_list(node)
-
-                # TODO: is node_parent not None here????
-                for blocked_node in max_consecutive_blocked_sublings_list:
-                    blocked_node.mark = Mark.UNBLOCKED
-                    blocked_node.parent = node_parent
-                    node_parent.pertinent_child_count += 1
+                unblocked_sublings_count = tree.unblock_sublings(node)
+                node_parent.pertinent_child_count += unblocked_sublings_count
 
             # TODO: not sure why this check is needed
             if node_parent is None:
@@ -460,7 +481,7 @@ def __bubble(tree, subset):
                     node_parent.mark = Mark.QUEUED
 
             BLOCK_COUNT -= len(blocked_sublings)
-            BLOCKED_NODES -= len(max_consecutive_blocked_sublings_list)
+            BLOCKED_NODES -= unblocked_sublings_count
 
         else:
             BLOCK_COUNT += (1 - len(blocked_sublings))

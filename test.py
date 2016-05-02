@@ -4,8 +4,7 @@ import unittest
 
 
 def convert_array(array):
-    map(lambda x: str(x), array)
-    return array
+    return [str(i) for i in array]
 
 
 def check_consecutive(array, consecutive_elements_list):
@@ -25,22 +24,19 @@ def check_consecutive(array, consecutive_elements_list):
 def __check_consequtive(array, conseq_elements):
     if len(array) < len(conseq_elements):
         return False
-    for i in range(len(array) - len(conseq_elements)):
+    for i in range(len(array) - len(conseq_elements) + 1):
         if array[i] in conseq_elements:
             len_conseq = len(conseq_elements)
             for j in range(len_conseq):
                 if not array[i + j] in conseq_elements:
                     return False
                 conseq_elements.remove(array[i + j])
-    return True
+    return len(conseq_elements) == 0
 
 
 class TestReduction(unittest.TestCase):
 
     def test1(self):
-        """
-        Simple test in which P1 and P2 templates are used
-        """
         data = [Data(i) for i in range(0, 7)]
 
         test_universe = data
@@ -102,6 +98,28 @@ class TestReduction(unittest.TestCase):
 
         tree = reduce_tree(tree, [data[i] for i in [0, 7, 2, 6, 3, 8]])
         self.assertTrue(check_consecutive(tree.get_frontier(), [[0, 2, 3, 6, 7, 8]]))
+
+    def test_Pnode_iterator(self):
+        data = [Data(i) for i in range(0, 10, 2)]
+        tree = PQtree(data)
+        index = 0
+        for child in tree.get_root().iter_children():
+            self.assertEqual(child.data, data[index])
+            index += 1
+
+    def test_Qnode_iterator(self):
+        tree = PQtree([])
+        root = tree.get_root()
+        qnode = root.add_child(Type.Q_NODE)
+        data = [Data(i) for i in range(0, 10, 2)]
+        for i in range(5):
+            qnode.add_child(Type.LEAF, data[i])
+
+        index = 0
+        for child in qnode.iter_children():
+            self.assertEqual(child, data[index])
+            index += 1
+
 
 if __name__ == "__main__":
     unittest.main()
