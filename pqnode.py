@@ -339,6 +339,18 @@ class PQnode(object):
         self.mark = Mark.UNMARKED
         self.label = Label.EMPTY
 
+    def full_reset_node(self):
+        self.full_children = []
+        self.partial_children = []
+        self.pertinent_child_count = 0
+        self.pertinent_leaf_count = 0
+        self.mark = Mark.UNMARKED
+        self.label = Label.EMPTY
+        for i in range(2):
+            self.immediate_sublings[i] = None
+            self.endmost_children[i] = None
+        self.circular_link = []
+
     # FIXME: Update
     def add_child(self, node_type, data=None):
         new_node = PQnode(node_type=node_type, data=data)

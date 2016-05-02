@@ -223,10 +223,6 @@ class PQtree(object):
             print("[Template_P5] 2) result = False")
             return False
 
-        # # FIXME: XXX
-        # print("[Template_P5] 10) result = False")
-        # return False
-
         node_parent = node.parent
         assert node_parent is not None
 
@@ -246,51 +242,46 @@ class PQtree(object):
             node.move_full_children(full_node)
         else:
             # node.full_children has a len == 1 here
+            # FIXME: Remove assert and add support for 0 full children
+            assert len(node.full_children) != 0
             full_node = node.full_children[0]
             node.full_children = []
             node.circular_link.remove(full_node)
 
         full_node.parent = partial_node
-
-        # Append full not as a child of partial node
-        # Must choose correct corner to add
-        if partial_node.left_endmost.label == Label.FULL:
-            endmost_full_node = partial_node.left_endmost
-            endmost_full_node.left_subling = full_node
-            full_node.right_subling = endmost_full_node
-            partial_node.left_endmost = full_node
-        else:
-            endmost_full_node = partial_node.right_endmost
-            endmost_full_node.right_subling = full_node
-            full_node.left_subling = endmost_full_node
-            partial_node.right_endmost = full_node
-
         full_node.mark_full()
 
+        # Add new full node as an endmost children
+        partial_node.replace_endmost_child(full_child, full_node)
+        full_child.add_sibling(full_node)
+        full_node.add_sibling(full_child)
+
+        # Update links
         node.circular_link.remove(partial_node)
         node.partial_children.remove(partial_node)
+
         # Remove all reference to node from node_parent
         node_parent.circular_link.remove(node)
 
-        # TODO: Not sure if could be 0
-        if len(node.circular_link) == 1:
-            node = node.circular_link[0]
+        # If there are left empty children, move them to
+        # partial node
+        if len(node.circular_link) > 0:
 
-        # Make empty P-node child of partial node
-        if full_node == partial_node.left_endmost:
-            endmost_empty_node = partial_node.right_endmost
-            endmost_empty_node.right_subling = node
-            node.left_subling = endmost_empty_node
-            partial_node.right_endmost = node
-        else:
-            endmost_empty_node = partial_node.left_endmost
-            endmost_empty_node.left_subling = node
-            node.right_subling = endmost_empty_node
-            partial_node.left_endmost = node
+            # If only one child is left, use it instead of P-node
+            if len(node.circular_link) == 1:
+                tmp_node = node
+                node = node.circular_link[0]
+                tmp_node.circular_link = []
 
-        node.mark_empty()
-        partial_node.circular_link.append(node)
+            # Move empty child to partial node
+            partial_node.replace_endmost_child(empty_child, node)
+            empty_child.add_sibling(node)
+            node.add_sibling(empty_child)
 
+            # Just in case
+            node.mark_empty()
+
+        # Update parent link for partial_node
         partial_node.parent = node_parent
         partial_node.mark_partial()
         node_parent.circular_link.append(partial_node)
@@ -325,22 +316,51 @@ class PQtree(object):
             print("[Template_P6] 4) result = False")
             return False
 
-        # At first, create P-node for full children of node
-        if len(node.full_children) > 1:
-            full_node = PQnode()
-            full_node.node_type = Type.P_NODE
-            node.move_full_children(full_node)
-        # TODO: add special case for 0 full_children
+        if len(node.full_children) > 0:
+
+            # Only one full child, no need to create new P-node
+            if len(node.full_children) == 1:
+                full_node = node.full_children[0]
+                node.full_children = []
+                node.circular_link.remove(full_node)
+            else:
+                full_node = PQnode()
+                full_node.node_type = Type.P_NODE
+                node.move_full_children(full_node)
+
+            full_node.parent = partial_qnode1
+            full_node.mark_full()
+
+            # Put full_node as a child of partial_qnode1
+            #
+            # Note: do not set endmost_child yet, it will be done later
+            # after merge of partial nodes
+            full_child1.add_sibling(full_node)
+            full_node.add_sibling(full_child1)
+
+            # Now merge two partial nodes
+            full_node.add_sibling(full_child2)
+            full_child2.add_sibling(full_node)
+
         else:
-            full_node = node.full_children[0]
-            node.full_children = []
-            node.circular_link.remove(full_node)
+            # In this case just merge partial nodes
+            full_child1.add_sibling(full_child2)
+            full_child2.add_sibling(full_child1)
 
-        # Add full node to the partial Q-node
-        if len(node.full_children) >= 1:
+        partial_qnode1.replace_endmost_child(full_child1, empty_child2)
+        empty_child2.parent = partial_qnode1
+
+        # XXX: not sure if should set parent reference
+        full_child2.parent = partial_qnode1
+        full_child2.mark_full()
+
+        # Remove partial_qnode2
+        node.circular_link.remove(partial_qnode2)
+        partial_qnode2.full_reset_node()
+
+        # TODO: case if node has only one child(partial_qnode1)
+        if len(node.circular_link) == 1:
             pass
-            #partial_qnode1.append_full_node(full_node)
-
 
         print("[Template_P6] 2) result = True")
         return True
