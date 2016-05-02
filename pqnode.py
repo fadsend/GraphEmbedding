@@ -46,8 +46,7 @@ class PnodeIterator:
 # TODO: add support for pseudonode later
 class QnodeIterator:
     def __init__(self, node):
-        self.child = node
-        self.current = None
+        # self.current = node.endmost_children[0]
         self.prev = None
 
     def __iter__(self):
@@ -57,12 +56,13 @@ class QnodeIterator:
         if self.current is None:
             raise StopIteration
 
-        next_child = self.current.immediate_subling[0]
-        if next_child == self.prev:
-            next_child = self.current.immediate_subling[1]
+        child_to_return = self.current
+
+        self.current = self.current.immediate_subling[0]
+        if self.current == self.prev:
+            self.current = self.current.immediate_subling[1]
         self.prev = self.current
-        self.current = next_child
-        return next_child
+        return child_to_return
 
 
 # Data class to store info in nodes. Also needed for cross-reference
@@ -259,21 +259,24 @@ class PQnode(object):
     def mark_partial(self):
         self.label = Label.PARTIAL
         if self.parent is not None and \
-                        self not in self.parent.partial_children:
+           self not in self.parent.partial_children:
             self.parent.partial_children.append(self)
 
     def __str__(self):
         return str(self.data)
 
     def reset(self):
-        if self.node_type == Type.P_NODE:
-            for child in self.circular_link:
+        if self.node_type != Type.LEAF:
+            for child in self.iter_children():
                 child.reset()
-        elif self.node_type == Type.Q_NODE:
-            child = self.left_endmost
-            while child is not None:
-                child.reset()
-                child = child.right_subling
+        # if self.node_type == Type.P_NODE:
+        #     for child in self.circular_link:
+        #         child.reset()
+        # elif self.node_type == Type.Q_NODE:
+        #     child = self.left_endmost
+        #     while child is not None:
+        #         child.reset()
+        #         child = child.right_subling
 
         # Common part for all nodes
         self.full_children = []

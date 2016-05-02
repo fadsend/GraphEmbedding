@@ -112,12 +112,14 @@ class TestReduction(unittest.TestCase):
         root = tree.get_root()
         qnode = root.add_child(Type.Q_NODE)
         data = [Data(i) for i in range(0, 10, 2)]
-        for i in range(5):
-            qnode.add_child(Type.LEAF, data[i])
+        new_data = [data[i] for i in [1, 3, 0, 4, 2]]
+
+        for i in new_data:
+            qnode.add_child(Type.LEAF, i)
 
         index = 0
         for child in qnode.iter_children():
-            self.assertEqual(child, data[index])
+            self.assertEqual(child, new_data[index])
             index += 1
 
 
