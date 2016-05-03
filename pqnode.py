@@ -81,8 +81,6 @@ class PQnode(object):
     # Counter to get unique id for each node. Useful for debugging.
     id_counter = 0
 
-    # TODO: Perhaps add more field as arguments
-    # TODO: add iterator for children of different types
     def __init__(self, node_type=Type.LEAF, data=None):
         # Number of children nodes
         # self.child_count = 0
@@ -106,9 +104,7 @@ class PQnode(object):
         # For children of P-node it just a (None, None)
         # For endmost children of Q-node it is (node, None) or (None, node)
         # For interior children of Q-node it is (None, None)
-        self.left_subling = None
-        self.right_subling = None
-        self.immediate_sublings = [self.left_subling, self.right_subling]
+        self.immediate_sublings = [None, None]
 
         # Node's label: EMPTY, FULL or PARTIAL
         self.label = Label.EMPTY
@@ -137,15 +133,6 @@ class PQnode(object):
         if self.data is not None:
             self.data.node_reference = self
 
-    def get_sublings(self) -> tuple:
-        return self.left_subling, self.right_subling
-
-    def get_left_subling(self):
-        return self.left_subling
-
-    def get_right_subling(self):
-        return self.right_subling
-
     def get_num_sublings(self):
         count = 0
         for subling in self.immediate_sublings:
@@ -161,25 +148,6 @@ class PQnode(object):
 
     def inc_pertinent_child_count(self):
         self.pertinent_child_count += 1
-
-    def copy_node(self, move_data=False):
-        new_node = PQnode()
-        # new_node.child_count = self.child_count
-        new_node.circular_link = self.circular_link[:]
-        new_node.left_endmost = self.left_endmost
-        new_node.right_endmost = self.right_endmost
-        new_node.full_children = self.full_children[:]
-        new_node.left_subling = self.left_subling
-        new_node.right_subling = self.right_subling
-        new_node.label = self.label
-        new_node.mark = self.mark
-        new_node.parent = self.parent
-        new_node.node_type = self.node_type
-        if move_data:
-            new_node.data = self.data
-            new_node.data.node_reference = new_node
-            self.data = None
-        return new_node
 
     def move_full_children(self, new_node):
         for full_child in self.full_children:
@@ -207,14 +175,6 @@ class PQnode(object):
             self.circular_link.remove(old_child)
             self.circular_link.append(new_child)
         else:
-            # if old_child == self.left_endmost:
-            #    self.left_endmost = new_child
-            #
-            # if old_child == self.right_endmost:
-            #     self.right_endmost = new_child
-            #
-            # new_child.left_subling = old_child.left_subling
-            # new_child.right_subling = old_child.right_subling
             old_child.replace(new_child)
 
     def clear_siblings(self):
@@ -236,18 +196,13 @@ class PQnode(object):
         self.parent = None
 
     def count_siblings(self):
-        assert self.node_type == Type.Q_NODE
         count = 0
         for i in range(2):
-            if self.immediate_sublings is not None:
+            if self.immediate_sublings[i] is not None:
                 count += 1
         return count
 
     def replace_sibling(self, old_node, new_node):
-        assert self.node_type == Type.Q_NODE
-        assert old_node.node_type == Type.Q_NODE
-        assert new_node.node_type == Type.Q_NODE
-
         for i in range(2):
             if self.immediate_sublings[i] is not None and \
                self.immediate_sublings[i] == old_node:
@@ -278,27 +233,23 @@ class PQnode(object):
 
         self.replace_child(old_child, new_child)
 
-    def is_endmost_child(self):
-        return self.left_subling is not None or \
-               self.right_subling is not None
-
-    # def is_endmost_child_has_label(self, label):
-    #     if self.left_endmost is None or self.right_endmost is None:
-    #         return False
-    #
-    #     return self.left_endmost.label == label or \
-    #            self.right_endmost.label == label
+    # Generic routine for searching in self.endmost_children
+    # or self.immediate_sibling with specific label
+    def __get_with_label(self, array, label):
+        for i in range(2):
+            if array[i] is None:
+                return None
+            if array[i].label == label:
+                return array[i]
+        return None
 
     def get_endmost_child_with_label(self, label):
         assert self.node_type == Type.Q_NODE
+        return self.__get_with_label(self.endmost_children, label)
 
-        for i in range(2):
-            if self.endmost_children[i] is None:
-                return None
-            if self.endmost_children[i].label == label:
-                return self.endmost_children[i]
-
-        return None
+    def get_sibling_with_label(self, label):
+        assert self.node_type == Type.Q_NODE
+        return self.__get_with_label(self.immediate_sublings, label)
 
     def mark_full(self):
         self.label = Label.FULL
@@ -322,14 +273,6 @@ class PQnode(object):
         if self.node_type != Type.LEAF:
             for child in self.iter_children():
                 child.reset()
-        # if self.node_type == Type.P_NODE:
-        #     for child in self.circular_link:
-        #         child.reset()
-        # elif self.node_type == Type.Q_NODE:
-        #     child = self.left_endmost
-        #     while child is not None:
-        #         child.reset()
-        #         child = child.right_subling
 
         # Common part for all nodes
         self.full_children = []
@@ -351,7 +294,6 @@ class PQnode(object):
             self.endmost_children[i] = None
         self.circular_link = []
 
-    # FIXME: Update
     def add_child(self, node_type, data=None):
         new_node = PQnode(node_type=node_type, data=data)
         new_node.parent = self
@@ -373,26 +315,6 @@ class PQnode(object):
                 # but let's break the rule for test purpose
                 self.endmost_children[0] = new_node
         return new_node
-
-    # Append full node to the Q-node
-    # def append_full_node(self, full_node):
-    #     assert self.node_type == Type.Q_NODE
-    #     assert self.left_endmost.label == Label.FULL or \
-    #            self.right_endmost.label == Label.FULL
-    #
-    #     if self.left_endmost.label == Label.FULL:
-    #         self.left_endmost.left_subling = full_node
-    #         full_node.right_subling = self.left_endmost
-    #         self.left_endmost = full_node
-    #     else:
-    #         self.right_endmost.right_subling = full_node
-    #         full_node.left_subling = self.right_endmost
-    #         self.right_endmost = full_node
-    #
-    #     full_node.parent = self.parent
-    #     if self.parent is not None:
-    #         full_node.parent.circular_link.append(full_node)
-    #     full_node.mark_full()
 
     def iter_children(self):
         assert self.node_type != Type.LEAF

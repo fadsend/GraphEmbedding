@@ -99,6 +99,55 @@ class TestReduction(unittest.TestCase):
         tree = reduce_tree(tree, [data[i] for i in [0, 7, 2, 6, 3, 8]])
         self.assertTrue(check_consecutive(tree.get_frontier(), [[0, 2, 3, 6, 7, 8]]))
 
+    def test_Q2_template1(self):
+        tree = PQtree([])
+        root = tree.get_root()
+        root.node_type = Type.Q_NODE
+        data = [Data(i) for i in range(0, 10)]
+        root.add_child(Type.LEAF, data[9])
+        root.add_child(Type.LEAF, data[4])
+
+        q1 = root.add_child(Type.Q_NODE, None)
+        q1.add_child(Type.LEAF, data[5])
+        q1.add_child(Type.LEAF, data[0])
+        q1.add_child(Type.LEAF, data[6])
+
+        root.add_child(Type.LEAF, data[2])
+        root.add_child(Type.LEAF, data[7])
+
+        tree = reduce_tree(tree, [data[i] for i in [0, 7, 2, 6]])
+        self.assertTrue(check_consecutive(tree.get_frontier(), [[0, 2, 6, 7]]))
+
+    def test_Q3_template1(self):
+        tree = PQtree([])
+        root = tree.get_root()
+        root.node_type = Type.Q_NODE
+        data = [Data(i) for i in range(0, 15)]
+        root.add_child(Type.LEAF, data[9])
+        root.add_child(Type.LEAF, data[4])
+
+        q1 = root.add_child(Type.Q_NODE, None)
+        q1.add_child(Type.LEAF, data[5])
+        q1.add_child(Type.LEAF, data[0])
+        q1.add_child(Type.LEAF, data[6])
+
+        root.add_child(Type.LEAF, data[2])
+        root.add_child(Type.LEAF, data[7])
+
+        q2 = root.add_child(Type.Q_NODE, None)
+        q2.add_child(Type.LEAF, data[14])
+        q2.add_child(Type.LEAF, data[3])
+        q2.add_child(Type.LEAF, data[8])
+
+        root.add_child(Type.LEAF, data[10])
+        root.add_child(Type.LEAF, data[13])
+
+        tree = reduce_tree(tree, [data[i] for i in [0, 7, 2, 6, 14, 3]])
+        print(tree)
+        self.assertTrue(check_consecutive(tree.get_frontier(), [[0, 2, 3, 6, 7, 14]]))
+        self.assertEqual(data[14].node_reference.parent, root)
+        self.assertEqual(data[6].node_reference.parent, root)
+
     def test_Pnode_iterator(self):
         data = [Data(i) for i in range(0, 10, 2)]
         tree = PQtree(data)
@@ -124,4 +173,5 @@ class TestReduction(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    #unittest.main()
+    TestReduction().test_Q3_template1()

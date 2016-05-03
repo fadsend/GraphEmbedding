@@ -365,7 +365,6 @@ class PQtree(object):
         print("[Template_P6] 2) result = True")
         return True
 
-
     def template_q1(self, node: PQnode) -> bool:
         if node.node_type != Type.Q_NODE:
             print("[Template_Q1] result = " + str(False))
@@ -373,51 +372,86 @@ class PQtree(object):
 
         for child in node.iter_children():
             if child.label != Label.FULL:
-        #
-        # child = node.left_endmost
-        # while child is not None:
-        #     if child.label != Label.FULL:
                 print("[Template_Q1] result = " + str(False))
                 return False
-            # child = child.right_subling
 
         node.mark_full()
         print("[Template_Q1] result = " + str(True))
         return True
 
-
     def template_q2(self, node: PQnode) -> bool:
         if node.node_type != Type.Q_NODE or \
-           len(node.partial_children) > 0:
-            print("[Template_Q2] result = False")
+           len(node.partial_children) > 1:
+            print("[Template_Q2] 1) result = False")
             return False
 
         has_partial_child = len(node.partial_children) >= 1
         has_full_child = len(node.full_children) >= 1
 
         if has_full_child and not node.get_endmost_child_with_label(Label.FULL):
-            print("[Template_Q2] result = False")
+            print("[Template_Q2] 2) result = False")
             return False
 
         if not has_full_child and not node.get_endmost_child_with_label(Label.PARTIAL):
-            print("[Template_Q2] result = False")
+            print("[Template_Q2] 3) result = False")
             return False
 
+        # If partial Q-node exists, move all children from it
         if has_partial_child:
-            pass
+            partial_node = node.partial_children[0]
+
+            # Merge both corners
+            for i in range(2):
+                child = node.endmost_children[i]
+                assert child is not None
+
+                # Get endmost child of a partial node with the same label
+                partial_child = partial_node.get_endmost_child_with_label(child.label)
+
+                # I guess it cannot be eq to None
+                # if partial_child is not None:
+                sibling_of_partial = partial_node.get_sibling_with_label(child.label)
+                if sibling_of_partial is not None:
+                    # Note: add_sibling for partial_child is not needed since it
+                    # will be added in replace_sibling
+                    sibling_of_partial.replace_sibling(partial_node, partial_child)
+                else:
+                    node.replace_endmost_child(sibling_of_partial, partial_child)
+
+            node.partial_children.remove(partial_node)
+            partial_node.parent = None
 
         node.mark_partial()
 
-        print("[Template_Q2] result = True")
+        print("[Template_Q2] 4) result = True")
         return True
 
     def template_q3(self, node: PQnode) -> bool:
-        if node.node_type != Type.Q_NODE:
-            print("[Template_Q3] result = False")
+        if node.node_type != Type.Q_NODE or \
+           len(node.partial_children) > 2:
+            print("[Template_Q3] 1) result = False")
             return False
 
-        print("[Template_Q3] result = False")
-        return False
+        for partial_node in node.partial_children:
+            for partial_node_sibling in partial_node.immediate_siblings:
+                if partial_node_sibling is None:
+                    partial_node_empty_child = partial_node.get_endmost_child_with_label(Label.EMPTY)
+                    partial_node_empty_child.parent = node
+                    node.replace_endmost_child(partial_node, partial_node_empty_child)
+                else:
+                    partial_node_child = partial_node.get_endmost_child_with_label(partial_node_sibling.label)
+                    # XXX: understand why its needed
+                    if partial_node_child is None:
+                        partial_node_child = partial_node.get_endmost_child_with_label(Label.FULL)
+                    partial_node_sibling.replace_sibling(partial_node, partial_node_child)
+
+            partial_node.full_reset_node()
+            node.partial_children.remove(partial_node)
+
+        node.mark_partial()
+
+        print("[Template_Q3] 2) result = True")
+        return True
 
     def unblock_sublings(self, node):
         assert node.mark == Mark.UNBLOCKED
