@@ -5,8 +5,14 @@ import myqueue
 class PQtree(object):
 
     def __init__(self, universe):
+        # Universe set
         self.universe = universe
+        # Root of the tree
         self.root = None
+        # Reference to pseudo node
+        self.pseudo_node = None
+        # References to siblings of pseudo node to restore them later
+        self.pseudo_siblings = [None, None]
         self.construct_tree()
 
     def reset(self):
@@ -433,7 +439,7 @@ class PQtree(object):
             return False
 
         for partial_node in node.partial_children:
-            for partial_node_sibling in partial_node.immediate_siblings:
+            for partial_node_sibling in partial_node.immediate_sublings:
                 if partial_node_sibling is None:
                     partial_node_empty_child = partial_node.get_endmost_child_with_label(Label.EMPTY)
                     partial_node_empty_child.parent = node
@@ -472,6 +478,17 @@ class PQtree(object):
                 sublings_to_return.append(sub)
         return sublings_to_return
 
+    def reset_pseudo_node(self):
+        if self.pseudo_node is None:
+            return
+
+        for i in range(2):
+            self.pseudo_node.endmost_children[i].add_sibling(self.pseudo_siblings[i])
+            self.pseudo_siblings[i].add_sibling(self.pseudo_node.endmost_children[i])
+
+        self.pseudo_node.clear_endmost()
+        self.pseudo_node = None
+
 
 # Global variables
 # Number of block of blocked nodes
@@ -486,6 +503,10 @@ QUEUE = None
 
 def __bubble(tree, subset):
     global QUEUE, BLOCK_COUNT, BLOCKED_NODES, OFF_THE_TOP
+
+    # Keep track of blocked nodes
+    # TODO: use linked list instead???
+    blocked_nodes = []
 
     # Initialize global variables
     QUEUE = myqueue.MyQueue()
@@ -526,8 +547,8 @@ def __bubble(tree, subset):
                 unblocked_sublings_count = tree.unblock_sublings(node)
                 node_parent.pertinent_child_count += unblocked_sublings_count
 
-            # TODO: not sure why this check is needed
             if node_parent is None:
+                # Inform that root node has been reached
                 OFF_THE_TOP = 1
             else:
                 node_parent.pertinent_child_count += 1
@@ -541,8 +562,36 @@ def __bubble(tree, subset):
         else:
             BLOCK_COUNT += (1 - len(blocked_sublings))
             BLOCKED_NODES += 1
+            blocked_nodes.append(node)
 
-    # TODO: i guess pseudonode should be added here
+    if BLOCK_COUNT > 1 or (OFF_THE_TOP == 1 and BLOCK_COUNT != 0):
+        return PQtree([])
+
+    # Create a pseudo node
+    if BLOCK_COUNT == 1 and BLOCKED_NODES > 1:
+        pseudo_node = PQnode()
+        pseudo_node.node_type = Type.Q_NODE
+        pseudo_node.pertinent_child_count = 0
+
+        count = 0
+
+        for blocked_node in blocked_nodes:
+            if blocked_node.mark == Mark.BLOCKED:
+                pseudo_node.pertinent_child_count += 1
+                pseudo_node.pertinent_leaf_count += blocked_node.pertinent_leaf_count
+                blocked_node.parent = pseudo_node
+                for i in range(2):
+                    sibling = blocked_node.immediate_sublings[i]
+                    if sibling.mark == Mark.UNMARKED:
+                        blocked_node.remove_sibling(sibling)
+                        sibling.remove_sibling(blocked_node)
+                        tree.pseudo_siblings[count] = sibling
+                        count += 1
+                        pseudo_node.add_endmost_child(blocked_node)
+                        break
+
+        tree.pseudo_node = pseudo_node
+
     return tree
 
 
@@ -573,6 +622,7 @@ def __reduce(tree, subset):
                not tree.template_p5(node) and \
                not tree.template_q1(node) and \
                not tree.template_q2(node):
+                tree.reset_pseudo_node()
                 return PQtree([])
 
         else:
@@ -584,8 +634,10 @@ def __reduce(tree, subset):
                not tree.template_q1(node) and \
                not tree.template_q2(node) and \
                not tree.template_q3(node):
+                tree.reset_pseudo_node()
                 return PQtree([])
 
+    tree.reset_pseudo_node()
     return tree
 
 

@@ -181,6 +181,10 @@ class PQnode(object):
         for i in range(2):
             self.immediate_sublings[i] = None
 
+    def clear_endmost(self):
+        for i in range(2):
+            self.endmost_children[i] = None
+
     def replace(self, new_node):
         assert self.node_type == Type.Q_NODE
 
@@ -202,17 +206,41 @@ class PQnode(object):
                 count += 1
         return count
 
+    def count_endmost(self):
+        count = 0
+        for i in range(2):
+            if self.endmost_children[i] is not None:
+                count += 1
+        return count
+
     def replace_sibling(self, old_node, new_node):
         for i in range(2):
             if self.immediate_sublings[i] is not None and \
                self.immediate_sublings[i] == old_node:
                 self.immediate_sublings[i] = new_node
-        new_node.immediate_sublings[new_node.count_siblings()] = self
+
+        if new_node is not None:
+            new_node.immediate_sublings[new_node.count_siblings()] = self
+
+    def remove_sibling(self, sibling):
+        assert sibling in self.immediate_sublings
+
+        if self.immediate_sublings[1] == sibling:
+            self.immediate_sublings[1] = None
+        elif self.immediate_sublings[0] == sibling:
+            self.immediate_sublings[0] = self.immediate_sublings[1]
+            self.immediate_sublings[1] = None
+
 
     def add_sibling(self, node):
-        idx = self.get_num_sublings()
+        idx = self.count_siblings()
         assert idx < 2
         self.immediate_sublings[idx] = node
+
+    def add_endmost_child(self, node):
+        idx = self.count_endmost()
+        assert idx < 2
+        self.endmost_children[idx] = node
 
     def replace_endmost_child(self, old_node, new_node):
         assert self.node_type == Type.Q_NODE
@@ -289,9 +317,8 @@ class PQnode(object):
         self.pertinent_leaf_count = 0
         self.mark = Mark.UNMARKED
         self.label = Label.EMPTY
-        for i in range(2):
-            self.immediate_sublings[i] = None
-            self.endmost_children[i] = None
+        self.clear_siblings()
+        self.clear_endmost()
         self.circular_link = []
 
     def add_child(self, node_type, data=None):
