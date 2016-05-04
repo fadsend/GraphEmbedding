@@ -161,7 +161,6 @@ class PQnode(object):
     # Useful to move empty children after full were already moved
     def move_children(self, new_node):
         for child in self.circular_link:
-            self.circular_link.remove(child)
             new_node.circular_link.append(child)
             child.parent = new_node
 

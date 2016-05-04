@@ -452,7 +452,8 @@ class PQtree(object):
                     partial_node_sibling.replace_sibling(partial_node, partial_node_child)
 
             partial_node.full_reset_node()
-            node.partial_children.remove(partial_node)
+
+        node.partial_children = []
 
         node.mark_partial()
 
@@ -485,6 +486,8 @@ class PQtree(object):
         for i in range(2):
             self.pseudo_node.endmost_children[i].add_sibling(self.pseudo_siblings[i])
             self.pseudo_siblings[i].add_sibling(self.pseudo_node.endmost_children[i])
+            # Just in case
+            self.pseudo_node.endmost_children[i].parent = self.pseudo_siblings[i].parent
 
         self.pseudo_node.clear_endmost()
         self.pseudo_node = None
@@ -576,15 +579,18 @@ def __bubble(tree, subset):
         count = 0
 
         for blocked_node in blocked_nodes:
+            # Some node could be unblocked by sibling, so just ignore them
             if blocked_node.mark == Mark.BLOCKED:
                 pseudo_node.pertinent_child_count += 1
                 pseudo_node.pertinent_leaf_count += blocked_node.pertinent_leaf_count
                 blocked_node.parent = pseudo_node
                 for i in range(2):
                     sibling = blocked_node.immediate_sublings[i]
+                    # Check if sibling is from "outer" tree, then update references
                     if sibling.mark == Mark.UNMARKED:
                         blocked_node.remove_sibling(sibling)
                         sibling.remove_sibling(blocked_node)
+                        # Remember sibling to restore it later
                         tree.pseudo_siblings[count] = sibling
                         count += 1
                         pseudo_node.add_endmost_child(blocked_node)
@@ -609,7 +615,6 @@ def __reduce(tree, subset):
         if node.pertinent_leaf_count < len(subset):
             node_parent = node.parent
 
-            # TODO: check if ok to do so
             node_parent.pertinent_leaf_count += node.pertinent_leaf_count
             node_parent.pertinent_child_count -= 1
 
