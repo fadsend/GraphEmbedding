@@ -1,3 +1,5 @@
+import llist
+
 class MyQueue(object):
 
     def __init__(self, data=None):
@@ -8,15 +10,15 @@ class MyQueue(object):
             type(data) == tuple
 
         if data is None:
-            self.data = []
+            self.data = llist.dllist()
         else:
-            self.data = list(data)
+            self.data = llist.dllist(data)
 
     def push(self, data_to_add):
         self.data.append(data_to_add)
 
     def pop(self):
-        return self.data.pop(0)
+        return self.data.popleft()
 
     def size(self):
         return len(self.data)

@@ -1,4 +1,5 @@
 from enum import Enum
+import llist
 
 
 class Type(Enum):
@@ -88,17 +89,13 @@ class PQnode(object):
         PQnode.id_counter += 1
 
         # Linked list of node's children. Used only by P-node.
-        # TODO: perhaps double-linked list should be used instead
-        self.circular_link = []
+        self.circular_link = llist.dllist()
 
         # Reference to the last node's child. Used only by Q-node.
-        self.left_endmost = None
-        self.right_endmost = None
-        self.endmost_children = [self.left_endmost, self.right_endmost]
+        self.endmost_children = [None, None]
 
         # Set of full node's children
-        # TODO: change to linked list later
-        self.full_children = []
+        self.full_children = llist.dllist()
 
         # Tuple of immediate sublings.
         # For children of P-node it just a (None, None)
@@ -115,6 +112,9 @@ class PQnode(object):
 
         # Pointer to parent node.
         self.parent = None
+
+        # Flag if the current node is pseudo node
+        self.is_pseudo_node = False
 
         # Set of all partial children of the node
         self.partial_children = []
@@ -230,7 +230,6 @@ class PQnode(object):
             self.immediate_sublings[0] = self.immediate_sublings[1]
             self.immediate_sublings[1] = None
 
-
     def add_sibling(self, node):
         idx = self.count_siblings()
         assert idx < 2
@@ -308,6 +307,7 @@ class PQnode(object):
         self.pertinent_leaf_count = 0
         self.mark = Mark.UNMARKED
         self.label = Label.EMPTY
+        self.is_pseudo_node = False
 
     def full_reset_node(self):
         self.full_children = []
@@ -319,6 +319,7 @@ class PQnode(object):
         self.clear_siblings()
         self.clear_endmost()
         self.circular_link = []
+        self.is_pseudo_node = False
 
     def add_child(self, node_type, data=None):
         new_node = PQnode(node_type=node_type, data=data)
@@ -349,6 +350,35 @@ class PQnode(object):
             return PnodeIterator(self)
         else:
             return QnodeIterator(self)
+
+    def full_or_partial_children_are_consecutive(self):
+        # TODO: understand or re-write
+        if len(self.full_children) + len(self.partial_children) <= 1:
+            return True
+
+        label_count = {
+            Label.EMPTY: 0,
+            Label.FULL: 0,
+            Label.PARTIAL: 0
+        }
+
+        for full_child in self.full_children:
+            for i in range(2):
+                if full_child.immediate_sublings[i]:
+                    label_count[full_child.immediate_sublings[i].label] += 1
+
+        for partial_child in self.partial_children:
+            for i in range(2):
+                if partial_child.immediate_sublings[i]:
+                    label_count[partial_child.immediate_sublings[i].label] += 1
+
+        if label_count[Label.PARTIAL] != len(self.partial_children):
+            return False
+
+        if label_count[Label.FULL] != (len(self.full_children) * 2) - (2 - label_count[Label.PARTIAL]):
+            return False
+
+        return True
 
 if __name__ == "__main__":
     import doctest
