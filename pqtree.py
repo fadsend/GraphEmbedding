@@ -12,35 +12,21 @@ class PQtree(object):
     def __init__(self, universe):
         # Universe set
         self.universe = universe
-        # Root of the tree
-        self.root = None
         # Reference to pseudo node
         self.pseudo_node = None
         # References to siblings of pseudo node to restore them later
         self.pseudo_siblings = [None, None]
-        self.construct_tree()
+        # Root of the tree
+        self.root = PQnode(node_type=Type.P_NODE, data=None)
+        # Form initial tree
+        for element in self.universe:
+            self.root.add_child(Type.LEAF, element)
 
     def reset(self):
         self.root.reset()
 
     def get_root(self):
         return self.root
-
-    def construct_tree(self):
-        self.root = PQnode(node_type=Type.P_NODE, data=None)
-        for element in self.universe:
-            self.root.add_child(Type.LEAF, element)
-
-    def construct_from_graph(self, graph):
-        edges = graph.getEdgeNumbers()
-
-        # TODO: change to logger
-        print("[PQtree::constructFromGraph] Edges: " + str(edges))
-
-        self.root = PQnode(None)
-
-        for edge in edges:
-            self.add_node(self.root, Type.LEAF, edge)
 
     def __str__(self):
         if self.root is None:
@@ -82,7 +68,7 @@ class PQtree(object):
             return []
         return self.__get_frontier(self.root)
 
-    def __get_frontier(self, node):
+    def __get_frontier(self, node: PQnode):
         frontier = []
         if node.node_type != Type.LEAF:
             for child in node.iter_children():
@@ -484,7 +470,8 @@ class PQtree(object):
                 count += self.unblock_sublings(subling)
         return count
 
-    def filter_sublings(self, node: PQnode, mark: Mark) -> list:
+    @staticmethod
+    def filter_sublings(node: PQnode, mark: Mark) -> list:
         sublings_to_return = []
         for sub in node.immediate_sublings:
             if sub and sub.mark == mark:
@@ -546,8 +533,8 @@ def __bubble(tree, subset):
         node.mark = Mark.BLOCKED
 
         # Get list of blocked/unblocked sublings
-        blocked_sublings = tree.filter_sublings(node, Mark.BLOCKED)
-        unblocked_sublings = tree.filter_sublings(node, Mark.UNBLOCKED)
+        blocked_sublings = PQtree.filter_sublings(node, Mark.BLOCKED)
+        unblocked_sublings = PQtree.filter_sublings(node, Mark.UNBLOCKED)
 
         # If some subling is unblocked, then set parent pointer and mark node as unblocked
         if len(unblocked_sublings) > 0:
