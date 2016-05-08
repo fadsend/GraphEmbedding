@@ -541,7 +541,6 @@ def __bubble(tree, subset):
 
     while QUEUE.size() + BLOCK_COUNT + OFF_THE_TOP > 1:
         if QUEUE.size() == 0:
-            print(124)
             return PQtree([])
 
         # Get new node from queue and set BLOCKED mark by default
@@ -588,6 +587,10 @@ def __bubble(tree, subset):
             BLOCKED_NODES += 1
             blocked_nodes.append(node)
 
+        # If it is the last node in the queue
+        if QUEUE.size() == 0:
+            tree.pertinent_root = node
+
     if BLOCK_COUNT > 1 or (OFF_THE_TOP == 1 and BLOCK_COUNT != 0):
         return PQtree([])
 
@@ -617,6 +620,10 @@ def __bubble(tree, subset):
                         count += 1
                         pseudo_node.add_endmost_child(blocked_node)
                         break
+
+        # If pseudo_node has been created, than
+        # pertinent root is equal to root of the tree
+        tree.pertinent_root = tree.root
 
         tree.pseudo_node = pseudo_node
 

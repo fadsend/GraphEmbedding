@@ -9,12 +9,10 @@ def planar_testing(graph):
     # graph = copy.deepcopy(working_graph)
     # graph.compute_st_numbering()
 
-    # FIXME: not sure how to store edges, perhaps some extend function
-    # is needed for extending or shrinking universe set
     universe = graph.get_edges_lower(1)
     n = graph.get_num_of_vertices()
     tree = PQtree(universe)
-    # XXX: not sure if needed
+    # TODO: not sure if needed
     # tree = reduce_tree(tree, universe)
     for i in range(2, n):
         subset = graph.get_edges_higher(i)
@@ -32,8 +30,8 @@ def planar_testing(graph):
         else:
             tree.replace_node(pertinent_root, PQtree(subset1).get_root())
 
-        # XXX: why need to subtract universe???
-        universe = universe.subtract(subset.union(subset1))
+        # TODO: why need to subtract universe???
+        # universe = universe.subtract(subset.union(subset1))
     return True
 
 def linear_algorithm(graph):
