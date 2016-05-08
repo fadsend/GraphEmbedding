@@ -1,6 +1,5 @@
 from pqnode import PQnode, Type, Mark, Label
 import myqueue
-import llist
 
 
 class ReductionFailed(Exception):
@@ -9,21 +8,35 @@ class ReductionFailed(Exception):
 
 class PQtree(object):
 
-    def __init__(self, universe):
+    def __init__(self, universe, create_root=False):
         # Universe set
-        self.universe = universe
+        assert universe is not None
+        # self.universe = universe
         # Reference to pseudo node
         self.pseudo_node = None
         # References to siblings of pseudo node to restore them later
         self.pseudo_siblings = [None, None]
+        # Pertinent root
+        self.pertinent_root = None
         # Root of the tree
-        self.root = PQnode(node_type=Type.P_NODE, data=None)
-        # Form initial tree
-        for element in self.universe:
-            self.root.add_child(Type.LEAF, element)
+        if len(universe) > 0 or create_root:
+            self.root = PQnode(node_type=Type.P_NODE, data=None)
+            # Form initial tree
+            for element in universe:
+                self.root.add_child(Type.LEAF, element)
+        else:
+            self.root = None
 
-    def reset(self):
+    def pre_reset(self):
+        self.pertinent_root = None
+
+    def post_reset(self):
+        self.pseudo_node = None
+        self.pseudo_siblings = [None, None]
         self.root.reset()
+
+    def get_pertinent_root(self):
+        return self.pertinent_root
 
     def get_root(self):
         return self.root
@@ -45,8 +58,6 @@ class PQtree(object):
                 # child = child.right_subling
 
             # Remove last comma
-            # TODO: Do it in a better way
-            # result = result[:-2]
             result += " }"
 
         elif node.node_type == Type.P_NODE:
@@ -55,8 +66,6 @@ class PQtree(object):
             for child in node.iter_children():
                 result += self.print_tree(child) + ", "
             # Remove last comma
-            # TODO: Do it in a better way
-            # result = result[:-2]
             result += " ]"
         else:
             result = str(node.data)
@@ -204,7 +213,7 @@ class PQtree(object):
 
         # TODO: case when P-node has only one child
         if len(node.circular_link) == 1:
-            print("!@#!@#!@#!@")
+            pass
 
         print("[Template_P4] 3) result True")
         return True
@@ -232,7 +241,6 @@ class PQtree(object):
             return False
 
         # Combine full nodes and move them
-        # TODO: check if it's ok to do so
         if len(node.full_children) > 0:
             if len(node.full_children) > 1:
                 full_node = PQnode()
@@ -347,7 +355,6 @@ class PQtree(object):
         partial_qnode1.replace_endmost_child(full_child1, empty_child2)
         empty_child2.parent = partial_qnode1
 
-        # XXX: not sure if should set parent reference
         full_child2.parent = partial_qnode1
         full_child2.mark_full()
 
@@ -444,7 +451,6 @@ class PQtree(object):
                     node.replace_endmost_child(partial_node, partial_node_empty_child)
                 else:
                     partial_node_child = partial_node.get_endmost_child_with_label(partial_node_sibling.label)
-                    # XXX: understand why its needed
                     if partial_node_child is None:
                         partial_node_child = partial_node.get_endmost_child_with_label(Label.FULL)
                     partial_node_sibling.replace_sibling(partial_node, partial_node_child)
@@ -492,7 +498,16 @@ class PQtree(object):
         self.pseudo_node = None
 
     def is_empty(self):
-        return len(self.universe) == 0 and self.root is None
+        return self.root is None
+
+    @staticmethod
+    def replace_full_children(node, new_node):
+        node.replace_full_children(new_node)
+
+    @staticmethod
+    def replace_node(node, new_node):
+        raise NotImplemented
+        # node.replace(new_node)
 
 
 # Global variables
@@ -513,7 +528,7 @@ def __bubble(tree, subset):
         return tree
 
     # Keep track of blocked nodes
-    blocked_nodes = llist.dllist()
+    blocked_nodes = []
 
     # Initialize global variables
     QUEUE = myqueue.MyQueue()
@@ -526,6 +541,7 @@ def __bubble(tree, subset):
 
     while QUEUE.size() + BLOCK_COUNT + OFF_THE_TOP > 1:
         if QUEUE.size() == 0:
+            print(124)
             return PQtree([])
 
         # Get new node from queue and set BLOCKED mark by default
@@ -556,6 +572,7 @@ def __bubble(tree, subset):
 
             if node_parent is None:
                 # Inform that root node has been reached
+                tree.pertinent_root = node
                 OFF_THE_TOP = 1
             else:
                 node_parent.pertinent_child_count += 1
@@ -652,10 +669,11 @@ def __reduce(tree, subset):
 
 
 def reduce_tree(tree, subset):
+    tree.pre_reset()
     tree = __reduce(__bubble(tree, subset), subset)
     if tree.is_empty():
         raise ReductionFailed()
 
-    tree.reset()
+    tree.post_reset()
     return tree
 

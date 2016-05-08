@@ -1,5 +1,5 @@
 from graph import Graph
-from LinearAlgorithm import planar_testing
+from linear_algorithm import planar_testing
 
 
 def main():

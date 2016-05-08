@@ -1,5 +1,4 @@
 from enum import Enum
-import llist
 
 
 class Type(Enum):
@@ -21,12 +20,6 @@ class Mark(Enum):
     UNBLOCKED = 4
 
 
-class Orientation(Enum):
-    LEFT = 1
-    RIGHT = 2
-
-
-# FIXME: use inheritance for iterators
 class PnodeIterator:
     def __init__(self, node):
         assert node is not None
@@ -44,7 +37,6 @@ class PnodeIterator:
         return child_to_return
 
 
-# TODO: add support for pseudonode later
 class QnodeIterator:
     def __init__(self, node):
         self.current = node.endmost_children[0]
@@ -89,13 +81,13 @@ class PQnode(object):
         PQnode.id_counter += 1
 
         # Linked list of node's children. Used only by P-node.
-        self.circular_link = llist.dllist()
+        self.circular_link = []
 
         # Reference to the last node's child. Used only by Q-node.
         self.endmost_children = [None, None]
 
         # Set of full node's children
-        self.full_children = llist.dllist()
+        self.full_children = []
 
         # Tuple of immediate sublings.
         # For children of P-node it just a (None, None)
@@ -174,7 +166,7 @@ class PQnode(object):
             self.circular_link.remove(old_child)
             self.circular_link.append(new_child)
         else:
-            old_child.replace(new_child)
+            old_child.replace_qnode(new_child)
 
     def clear_siblings(self):
         for i in range(2):
@@ -184,7 +176,7 @@ class PQnode(object):
         for i in range(2):
             self.endmost_children[i] = None
 
-    def replace(self, new_node):
+    def replace_qnode(self, new_node):
         assert self.node_type == Type.Q_NODE
 
         new_node.clear_siblings()
@@ -197,6 +189,36 @@ class PQnode(object):
 
         self.clear_siblings()
         self.parent = None
+
+    def replace(self, new_node):
+        assert self.node_type == Type.P_NODE
+        # TODO: implement
+        raise NotImplemented
+
+    def replace_full_children(self, new_node):
+        assert new_node.node_type == Type.P_NODE
+        assert self.node_type == Type.Q_NODE
+
+        endmost_full_children = []
+
+        # Only need to update pointers for first and last full children
+        for full_child in self.full_children:
+            for i in range(2):
+                if full_child.immediate_sublings[i] is None:
+                    # Full child is the endmost also should update
+                    endmost_full_children.append(full_child)
+                elif full_child.immediate_sublings[i].label != Label.FULL:
+                    # Found endmost full children save it
+                    endmost_full_children.append(full_child)
+
+            if len(endmost_full_children) == 2:
+                # Both endmost full children are found, so no
+                # need to proceed
+                break
+
+        assert len(endmost_full_children) == 2
+        # TODO: complete
+        return None
 
     def count_siblings(self):
         count = 0
@@ -261,7 +283,8 @@ class PQnode(object):
 
     # Generic routine for searching in self.endmost_children
     # or self.immediate_sibling with specific label
-    def __get_with_label(self, array, label):
+    @staticmethod
+    def __get_with_label(array, label):
         for i in range(2):
             if array[i] is None:
                 return None
@@ -379,7 +402,3 @@ class PQnode(object):
             return False
 
         return True
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

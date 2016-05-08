@@ -33,8 +33,7 @@ class Graph(object):
         self.construct_graph(parsed_edges)
 
     def compute_st_numbering(self):
-        # FIXME: implement
-        pass
+        raise NotImplemented
 
     def get_edges_lower(self, number):
         edges = []

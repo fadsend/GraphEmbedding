@@ -77,7 +77,7 @@ class TestReduction(unittest.TestCase):
 
     # Construct tree for checking P6 template
     def test4(self):
-        tree = PQtree([])
+        tree = PQtree([], True)
         root = tree.get_root()
         data = [Data(i) for i in range(0, 10)]
         root.add_child(Type.LEAF, data[9])
@@ -100,7 +100,7 @@ class TestReduction(unittest.TestCase):
         self.assertTrue(check_consecutive(tree.get_frontier(), [[0, 2, 3, 6, 7, 8]]))
 
     def test_Q2_template1(self):
-        tree = PQtree([])
+        tree = PQtree([], True)
         root = tree.get_root()
         root.node_type = Type.Q_NODE
         data = [Data(i) for i in range(0, 10)]
@@ -119,7 +119,7 @@ class TestReduction(unittest.TestCase):
         self.assertTrue(check_consecutive(tree.get_frontier(), [[0, 2, 6, 7]]))
 
     def test_Q3_template1(self):
-        tree = PQtree([])
+        tree = PQtree([], True)
         root = tree.get_root()
         root.node_type = Type.Q_NODE
         data = [Data(i) for i in range(0, 15)]
@@ -159,7 +159,7 @@ class TestReduction(unittest.TestCase):
             index += 1
 
     def test_Qnode_iterator(self):
-        tree = PQtree([])
+        tree = PQtree([], True)
         root = tree.get_root()
         qnode = root.add_child(Type.Q_NODE)
         data = [Data(i) for i in range(0, 10, 2)]
@@ -175,5 +175,5 @@ class TestReduction(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    #unittest.main()
-    TestReduction().test_Q3_template1()
+    unittest.main()
+    # TestReduction().test_Q3_template1()
