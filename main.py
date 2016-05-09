@@ -1,5 +1,5 @@
 from graph import Graph
-from linear_algorithm import planar_testing
+from linear_algorithm import upward_embed
 
 
 def main():
@@ -28,13 +28,20 @@ def main():
         6: [1, 3, 4, 5]
     }
 
-
+    edges_non_planar6 = {
+        1: [2, 3, 5, 6],
+        2: [1, 3, 4, 5, 6],
+        3: [1, 2, 4, 6],
+        4: [2, 3, 5, 6],
+        5: [1, 2, 4, 6],
+        6: [1, 2, 3, 4, 5]
+    }
 
     graph = Graph()
     # graph.construct_graph_from_list(data2)
     # graph.generate_random_graph(10, 0.5)
     graph.construct_graph_from_adj_list(edges_planar6)
-    result = planar_testing(graph)
+    result = upward_embed(graph)
 
     if result:
         print("Graph is planar")

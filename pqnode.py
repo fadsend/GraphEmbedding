@@ -203,7 +203,12 @@ class PQnode(object):
         # assert self.node_type == Type.P_NODE
         assert self.parent is not None
 
-        adjacency_list = self.full_children
+        adjacency_list = []
+        if self.node_type != Type.LEAF:
+            for full_child in self.full_children:
+                adjacency_list.extend(full_child.collect_full_leaves())
+        else:
+            adjacency_list = [self]
 
         parent_node = self.parent
         parent_node.replace_child(self, new_node)
@@ -222,7 +227,10 @@ class PQnode(object):
         if len(self.full_children) == 1:
             raise NotImplementedError()
 
-        adjacency_list = self.full_children
+        adjacency_list = []
+
+        for full_child in self.full_children:
+            adjacency_list.extend(full_child.collect_full_leaves())
 
         # Only need to update pointers for first and last full children
         for full_child in self.full_children:
@@ -486,3 +494,16 @@ class PQnode(object):
             return False
 
         return True
+
+    def collect_full_leaves(self):
+        assert self.label == Label.FULL
+        if self.node_type == Type.LEAF:
+            return [self]
+        full_leaves = []
+        for child in self.iter_children():
+            if child.node_type == Type.LEAF:
+                full_leaves.append(child)
+            else:
+                full_leaves.extend(child.collect_full_leaves())
+        return full_leaves
+

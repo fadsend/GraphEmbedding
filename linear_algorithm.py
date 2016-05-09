@@ -3,10 +3,11 @@ from pqtree import reduce_tree, ReductionFailed
 from pqnode import Type
 
 
-def planar_testing(graph):
+def upward_embed(graph):
     universe = graph.get_edges_lower(1)
     n = graph.get_num_of_vertices()
     tree = PQtree(universe)
+    graph.adj_list[1] = []
     for i in range(2, n + 1):
         subset = graph.get_edges_higher(i)
         # if len(subset) == 0:
@@ -23,10 +24,22 @@ def planar_testing(graph):
         pertinent_root = tree.get_pertinent_root(subset)
         assert pertinent_root is not None
 
+        #print(tree)
         if pertinent_root.node_type == Type.Q_NODE:
             adj_list = tree.replace_full_children(pertinent_root, PQtree(subset1, True).get_root())
         else:
             adj_list = tree.replace_node(pertinent_root, PQtree(subset1, True).get_root())
-        print(adj_list)
 
+        #print("ADJ : " + str(adj_list))
+        #print(tree)
+        tmp123 = [tmp.data.data.vertices[0] for tmp in adj_list]
+        graph.adj_list[i] = []
+        for vertex in tmp123:
+            graph.adj_list[i].append(vertex)
+
+    print(graph.adj_list)
     return True
+
+# Assumed that upward_embed has been called for graph
+def embed(graph):
+    pass

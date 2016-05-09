@@ -529,8 +529,9 @@ class PQtree(object):
 
     def replace_node(self, node: PQnode, new_node: PQnode):
         if node == self.root:
+            old_root = self.root
             self.root = new_node
-            return []
+            return old_root.collect_full_leaves()
         else:
             return node.replace(new_node)
 
