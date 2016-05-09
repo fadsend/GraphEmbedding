@@ -48,13 +48,6 @@ class PQtree(object):
                 return element.node_reference
             else:
                 return pertinent_root
-        # pertinent_root = self.pertinent_root
-        # if self.pertinent_root is None:
-        #    pertinent_root = self.root
-        # TODO: check if there are another way to handle this
-        # if len(pertinent_root.full_children) == 1:
-        #     return pertinent_root.full_children[0]
-        # return pertinent_root
 
     def get_root(self):
         return self.root
@@ -231,7 +224,7 @@ class PQtree(object):
 
         # TODO: case when P-node has only one child
         if len(node.circular_link) == 1:
-            pass
+            raise NotImplementedError()
 
         print("[Template_P4] 3) result True")
         return True
@@ -311,8 +304,7 @@ class PQtree(object):
         print("[Template_P5] 4) result = True")
         return True
 
-    @staticmethod
-    def template_p6(node: PQnode) -> bool:
+    def template_p6(self, node: PQnode) -> bool:
         if node.node_type != Type.P_NODE:
             print("[Template_P6] 1) result = False")
             return False
@@ -380,9 +372,17 @@ class PQtree(object):
         node.circular_link.remove(partial_qnode2)
         partial_qnode2.full_reset_node()
 
-        # TODO: case if node has only one child(partial_qnode1)
         if len(node.circular_link) == 1:
-            pass
+            if node.parent is None:
+                if self.root == node:
+                    self.root = node.circular_link[0]
+                node.circular_link[0].parent = None
+                node.full_reset_node()
+            else:
+                new_node = node.circular_link[0]
+                node.parent.replace_child(node, new_node)
+                new_node.parent = node.parent
+                new_node.mark_partial()
 
         print("[Template_P6] 2) result = True")
         return True
@@ -689,7 +689,7 @@ def __reduce(tree, subset):
                not PQtree.template_p1(node, True) and \
                not PQtree.template_p2(node) and \
                not PQtree.template_p4(node) and \
-               not PQtree.template_p6(node) and \
+               not tree.template_p6(node) and \
                not PQtree.template_q1(node) and \
                not PQtree.template_q2(node) and \
                not PQtree.template_q3(node):
@@ -704,7 +704,7 @@ def reduce_tree(tree, subset):
     tree.pre_reset()
     tree = __reduce(__bubble(tree, subset), subset)
     if tree.is_empty():
-        raise ReductionFailed
+        raise ReductionFailed()
 
     tree.post_reset()
     return tree

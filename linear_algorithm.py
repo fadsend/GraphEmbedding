@@ -14,10 +14,11 @@ def planar_testing(graph):
         subset = graph.get_edges_higher(i)
         # if len(subset) == 0:
         #    continue
-        try:
-            tree = reduce_tree(tree, subset)
-        except ReductionFailed:
-            return False
+        tree = reduce_tree(tree, subset)
+        #try:
+        #    tree = reduce_tree(tree, subset)
+        #except ReductionFailed:
+        #    return False
 
         subset1 = graph.get_edges_lower(i)
         # Save pertinent root before its re-written on the next iteration

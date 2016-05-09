@@ -29,12 +29,7 @@ def main():
     # graph.construct_graph_from_list(data2)
     # graph.generate_random_graph(10, 0.5)
     graph.construct_graph_from_adj_list(edges1)
-    result = False
-    try:
-        result = planar_testing(graph)
-    except Exception as e:
-        print(e)
-        print(graph)
+    result = planar_testing(graph)
 
     if result:
         print("Graph is planar")
