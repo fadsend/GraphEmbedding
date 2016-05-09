@@ -207,7 +207,7 @@ class PQnode(object):
         parent_node.full_children.append(new_node)
         new_node.parent = parent_node
 
-    def replace_full_children(self, new_node):
+    def replace_full_children(self, new_node, include_indicator=False):
         assert new_node.node_type == Type.P_NODE
         assert self.node_type == Type.Q_NODE
 
@@ -217,6 +217,7 @@ class PQnode(object):
         if len(self.full_children) == 1:
             raise NotImplementedError()
 
+        print("---------------------")
         # Only need to update pointers for first and last full children
         for full_child in self.full_children:
             for i in range(2):
@@ -227,10 +228,14 @@ class PQnode(object):
                     # Found endmost full children save it
                     endmost_full_children.append(full_child)
 
+            print(full_child)
+
             if len(endmost_full_children) == 2:
                 # Both endmost full children are found, so no
                 # need to proceed
                 break
+
+        print("----------------------")
 
         assert len(endmost_full_children) == 2
 
