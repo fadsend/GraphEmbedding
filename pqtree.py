@@ -519,14 +519,15 @@ class PQtree(object):
         return self.root is None
 
     @staticmethod
-    def replace_full_children(node: PQnode, new_node: PQnode) -> None:
-        node.replace_full_children(new_node)
+    def replace_full_children(node: PQnode, new_node: PQnode):
+        return node.replace_full_children(new_node)
 
     def replace_node(self, node: PQnode, new_node: PQnode):
         if node == self.root:
             self.root = new_node
+            return []
         else:
-            node.replace(new_node)
+            return node.replace(new_node)
 
 
 # Global variables

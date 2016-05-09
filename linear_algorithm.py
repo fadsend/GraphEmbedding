@@ -24,9 +24,10 @@ def planar_testing(graph):
         assert pertinent_root is not None
 
         if pertinent_root.node_type == Type.Q_NODE:
-            tree.replace_full_children(pertinent_root, PQtree(subset1).get_root())
+            adj_list = tree.replace_full_children(pertinent_root, PQtree(subset1, True).get_root())
         else:
-            tree.replace_node(pertinent_root, PQtree(subset1).get_root())
+            adj_list = tree.replace_node(pertinent_root, PQtree(subset1, True).get_root())
+
     return True
 
 def linear_algorithm(graph):
