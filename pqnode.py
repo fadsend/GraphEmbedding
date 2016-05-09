@@ -133,6 +133,8 @@ class PQnode(object):
         self.data = data
         if self.data is not None:
             self.data.node_reference = self
+        else:
+            print("New node is created: id = " + str(self.id))
 
     def get_num_siblings(self):
         count = 0

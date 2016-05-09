@@ -445,6 +445,11 @@ class PQtree(object):
                 else:
                     node.replace_endmost_child(sibling_of_partial, partial_child)
 
+                # Override parent node just in case
+                partial_child.parent = node
+                if partial_child.label == Label.FULL:
+                    partial_child.mark_full()
+
             node.partial_children.remove(partial_node)
             partial_node.parent = None
 
@@ -557,6 +562,7 @@ def __bubble(tree, subset):
     OFF_THE_TOP = 0
 
     for element in subset:
+        # Ignore elements from the subset which is not in the tree
         if element.node_reference is None:
             continue
         QUEUE.push(element.node_reference)
@@ -659,6 +665,7 @@ def __reduce(tree, subset):
     subset_len = 0
 
     for leaf in subset:
+        # Ignore elements from subset which is not in the tree
         if leaf.node_reference is None:
             continue
         subset_len += 1

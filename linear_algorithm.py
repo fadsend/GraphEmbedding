@@ -27,8 +27,6 @@ def planar_testing(graph):
             adj_list = tree.replace_full_children(pertinent_root, PQtree(subset1, True).get_root())
         else:
             adj_list = tree.replace_node(pertinent_root, PQtree(subset1, True).get_root())
+        print(adj_list)
 
     return True
-
-def linear_algorithm(graph):
-    pass

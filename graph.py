@@ -96,17 +96,6 @@ class Graph(object):
         raise NotImplemented
 
     def get_edges_lower(self, number):
-        #edges = []
-        #for vertex in self.adjList.keys():
-        #    if vertex == number:
-        #        for adj_vertex in self.adjList[vertex]:
-        #            if adj_vertex < vertex:
-        #                continue
-        #            if (vertex, adj_vertex) in self.edges_list.keys():
-        #                edges.append(self.edges_list[(vertex, adj_vertex)])
-        #            else:
-        #                edges.append(self.edges_list[(adj_vertex, vertex)])
-        #return edges
         edges = []
         for edge in self.edges_list:
             if edge.data.get_lower() == number:
@@ -119,18 +108,6 @@ class Graph(object):
             if edge.data.get_higher() == number:
                 edges.append(edge)
         return edges
-
-        #edges = []
-        #for vertex in self.adjList.keys():
-        #    for adj_vertex in self.adjList[vertex]:
-        #        if adj_vertex < vertex:
-        #            continue
-        #        if adj_vertex == number:
-        #            if (vertex, adj_vertex) in self.edges_list:
-        #                edges.append(self.edges_list[(vertex, adj_vertex)])
-        #            else:
-        #                edges.append(self.edges_list[(adj_vertex, vertex)])
-        #return edges
 
     def get_num_of_vertices(self):
         # return len(self.adjList)
@@ -146,13 +123,10 @@ class Graph(object):
 
         self.construct_graph_from_adj_list(adj_list)
 
-
     def __str__(self):
         tmp_str = ""
         for edge in self.edges_list:
             tmp_str += " " + str(edge) + " "
-        #for vertex in self.adjList:
-        #    tmp_str += str(vertex) + "-->" + str(self.adjList[vertex]) + "\n"
         return tmp_str
 
 if __name__ == "__main__":
