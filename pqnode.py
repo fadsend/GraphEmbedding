@@ -20,6 +20,7 @@ class Mark(Enum):
     BLOCKED = 3
     UNBLOCKED = 4
 
+
 class Direction(Enum):
     NONE = 1
     LEFT_TO_RIGHT = 2
@@ -227,11 +228,6 @@ class PQnode(object):
         if len(self.full_children) == 1:
             raise NotImplementedError()
 
-        adjacency_list = []
-
-        for full_child in self.full_children:
-            adjacency_list.extend(full_child.collect_full_leaves())
-
         # Only need to update pointers for first and last full children
         for full_child in self.full_children:
             for i in range(2):
@@ -248,6 +244,24 @@ class PQnode(object):
                 break
 
         assert len(endmost_full_children) == 2
+
+        adjacency_list = []
+
+        # Iterate from one endmost full child to another since order of self.full_children
+        # could differ from actual one. It a bit re-written version of QnodeIterator
+        # TODO: move to separate function to clear the code a bit
+        prev_child = endmost_full_children[0].get_sibling_with_label(Label.EMPTY)
+        full_child = endmost_full_children[0]
+        while True:
+            if full_child is None or full_child.label != Label.FULL:
+                break
+            actual_child = full_child
+            next_child = full_child.immediate_sublings[0]
+            if next_child == prev_child:
+                next_child = full_child.immediate_sublings[1]
+            prev_child = full_child
+            full_child = next_child
+            adjacency_list.extend(actual_child.collect_full_leaves())
 
         sibling1 = endmost_full_children[0].get_sibling_with_label(Label.EMPTY)
         sibling2 = endmost_full_children[1].get_sibling_with_label(Label.EMPTY)
