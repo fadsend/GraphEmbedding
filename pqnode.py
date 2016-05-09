@@ -125,7 +125,7 @@ class PQnode(object):
         if self.data is not None:
             self.data.node_reference = self
 
-    def get_num_sublings(self):
+    def get_num_siblings(self):
         count = 0
         for subling in self.immediate_sublings:
             if subling is not None:
@@ -166,7 +166,7 @@ class PQnode(object):
             self.circular_link.remove(old_child)
             self.circular_link.append(new_child)
         else:
-            old_child.replace_qnode(new_child)
+            old_child.replace_qnode_child(new_child)
 
     def clear_siblings(self):
         for i in range(2):
@@ -176,9 +176,7 @@ class PQnode(object):
         for i in range(2):
             self.endmost_children[i] = None
 
-    def replace_qnode(self, new_node):
-        assert self.node_type == Type.Q_NODE
-
+    def replace_qnode_child(self, new_node):
         new_node.clear_siblings()
 
         for i in range(2):
@@ -191,15 +189,24 @@ class PQnode(object):
         self.parent = None
 
     def replace(self, new_node):
-        assert self.node_type == Type.P_NODE
-        # TODO: implement
-        raise NotImplemented
+        # assert self.node_type == Type.P_NODE
+        assert self.parent is not None
+
+        parent_node = self.parent
+        parent_node.replace_child(self, new_node)
+        parent_node.full_children = []
+        parent_node.full_children.append(new_node)
+        new_node.parent = parent_node
 
     def replace_full_children(self, new_node):
         assert new_node.node_type == Type.P_NODE
         assert self.node_type == Type.Q_NODE
 
         endmost_full_children = []
+
+        # TODO: handle case with only on full_children
+        if len(self.full_children) == 1:
+            raise NotImplementedError()
 
         # Only need to update pointers for first and last full children
         for full_child in self.full_children:
@@ -217,8 +224,64 @@ class PQnode(object):
                 break
 
         assert len(endmost_full_children) == 2
-        # TODO: complete
-        return None
+
+        sibling1 = endmost_full_children[0].get_sibling_with_label(Label.EMPTY)
+        sibling2 = endmost_full_children[1].get_sibling_with_label(Label.EMPTY)
+
+        if sibling1 is None and sibling2 is None:
+            # Q-node consist only of full children
+            self.replace_endmost_child(endmost_full_children[0], new_node)
+            self.replace_endmost_child(endmost_full_children[1], new_node)
+        elif sibling1 is not None and sibling2 is None:
+            sibling1.replace_sibling(endmost_full_children[0], new_node)
+            self.replace_endmost_child(endmost_full_children[1], new_node)
+        elif sibling2 is not None and sibling1 is None:
+            sibling2.replace_sibling(endmost_full_children[1], new_node)
+            self.replace_endmost_child(endmost_full_children[0], new_node)
+        else:
+            # Replace siblings with new node
+            # new_node's siblings are updated there
+            sibling1.replace_sibling(endmost_full_children[0], new_node)
+            sibling2.replace_sibling(endmost_full_children[1], new_node)
+
+        self.full_children = []
+        # Add new node to the list of full children
+        new_node.parent = self
+        new_node.mark_full()
+
+        # Only one children remain
+        if self.endmost_children[0] == self.endmost_children[1]:
+            self.replace_qnode(self.endmost_children[0])
+
+        if not self.is_valid_qnode():
+            self.update_to_pnode()
+
+    def is_valid_qnode(self):
+        assert self.node_type == Type.Q_NODE
+        assert self.endmost_children[0].get_num_siblings() != 0 and \
+               self.endmost_children[1].get_num_siblings() != 0
+
+        if self.endmost_children[0].has_sibling(self.endmost_children[1]) or \
+           self.endmost_children[1].has_sibling(self.endmost_children[0]):
+            return False
+
+        return True
+
+    def update_to_pnode(self):
+        for child in self.iter_children():
+            self.circular_link.append(child)
+
+        self.clear_endmost()
+        self.clear_siblings()
+        self.node_type = Type.P_NODE
+
+    def has_sibling(self, node):
+        return self.immediate_sublings[0] == node or \
+               self.immediate_sublings[1] == node
+
+    def replace_qnode(self, new_node):
+        raise NotImplementedError()
+
 
     def count_siblings(self):
         count = 0
@@ -297,8 +360,11 @@ class PQnode(object):
         return self.__get_with_label(self.endmost_children, label)
 
     def get_sibling_with_label(self, label):
-        assert self.node_type == Type.Q_NODE
         return self.__get_with_label(self.immediate_sublings, label)
+
+    def get_siblings_with_label(self, label):
+        return (self.__get_with_label(self.immediate_sublings, label),
+                self.__get_with_label(self.immediate_sublings[1:], label))
 
     def mark_full(self):
         self.label = Label.FULL

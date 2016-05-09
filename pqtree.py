@@ -17,7 +17,7 @@ class PQtree(object):
         # References to siblings of pseudo node to restore them later
         self.pseudo_siblings = [None, None]
         # Pertinent root
-        self.pertinent_root = None
+        # self.pertinent_root = None
         # Root of the tree
         if len(universe) > 0 or create_root:
             self.root = PQnode(node_type=Type.P_NODE, data=None)
@@ -27,16 +27,34 @@ class PQtree(object):
         else:
             self.root = None
 
+    # TODO: find a way to handle double reset
     def pre_reset(self):
-        self.pertinent_root = None
+        self.root.reset()
+        # self.pertinent_root = None
 
     def post_reset(self):
         self.pseudo_node = None
         self.pseudo_siblings = [None, None]
-        self.root.reset()
+        # self.root.reset()
 
-    def get_pertinent_root(self):
-        return self.pertinent_root
+    # Note: tree must be reduced, and subset must be the same
+    # as for reduction
+    def get_pertinent_root(self, subset):
+        for element in subset:
+            if element.node_reference is None:
+                continue
+            pertinent_root = element.node_reference.parent
+            if pertinent_root is None or len(pertinent_root.full_children) == 1:
+                return element.node_reference
+            else:
+                return pertinent_root
+        # pertinent_root = self.pertinent_root
+        # if self.pertinent_root is None:
+        #    pertinent_root = self.root
+        # TODO: check if there are another way to handle this
+        # if len(pertinent_root.full_children) == 1:
+        #     return pertinent_root.full_children[0]
+        # return pertinent_root
 
     def get_root(self):
         return self.root
@@ -501,13 +519,14 @@ class PQtree(object):
         return self.root is None
 
     @staticmethod
-    def replace_full_children(node, new_node):
+    def replace_full_children(node: PQnode, new_node: PQnode) -> None:
         node.replace_full_children(new_node)
 
-    @staticmethod
-    def replace_node(node, new_node):
-        raise NotImplemented
-        # node.replace(new_node)
+    def replace_node(self, node: PQnode, new_node: PQnode):
+        if node == self.root:
+            self.root = new_node
+        else:
+            node.replace(new_node)
 
 
 # Global variables
@@ -537,6 +556,8 @@ def __bubble(tree, subset):
     OFF_THE_TOP = 0
 
     for element in subset:
+        if element.node_reference is None:
+            continue
         QUEUE.push(element.node_reference)
 
     while QUEUE.size() + BLOCK_COUNT + OFF_THE_TOP > 1:
@@ -556,7 +577,7 @@ def __bubble(tree, subset):
             node.parent = unblocked_sublings[0].parent
             node.mark = Mark.UNBLOCKED
         # If not an interior child of Qnode, than mark as unblocked
-        elif node.get_num_sublings() < 2:
+        elif node.get_num_siblings() < 2:
             node.mark = Mark.UNBLOCKED
 
         if node.mark == Mark.UNBLOCKED:
@@ -571,7 +592,7 @@ def __bubble(tree, subset):
 
             if node_parent is None:
                 # Inform that root node has been reached
-                tree.pertinent_root = node
+                # tree.pertinent_root = node
                 OFF_THE_TOP = 1
             else:
                 node_parent.pertinent_child_count += 1
@@ -588,8 +609,8 @@ def __bubble(tree, subset):
             blocked_nodes.append(node)
 
         # If it is the last node in the queue
-        if QUEUE.size() == 0:
-            tree.pertinent_root = node
+        # if QUEUE.size() == 0:
+            # tree.pertinent_root = node
 
     if BLOCK_COUNT > 1 or (OFF_THE_TOP == 1 and BLOCK_COUNT != 0):
         return PQtree([])
@@ -623,7 +644,7 @@ def __bubble(tree, subset):
 
         # If pseudo_node has been created, than
         # pertinent root is equal to root of the tree
-        tree.pertinent_root = tree.root
+        # tree.pertinent_root = tree.root
 
         tree.pseudo_node = pseudo_node
 
@@ -634,14 +655,18 @@ def __reduce(tree, subset):
     global QUEUE, BLOCK_COUNT, BLOCKED_NODES, OFF_THE_TOP
 
     QUEUE = myqueue.MyQueue()
+    subset_len = 0
 
     for leaf in subset:
+        if leaf.node_reference is None:
+            continue
+        subset_len += 1
         QUEUE.push(leaf.node_reference)
         leaf.node_reference.pertinent_leaf_count = 1
 
     while QUEUE.size() > 0:
         node = QUEUE.pop()
-        if node.pertinent_leaf_count < len(subset):
+        if node.pertinent_leaf_count < subset_len:
             node_parent = node.parent
 
             node_parent.pertinent_leaf_count += node.pertinent_leaf_count
@@ -679,7 +704,7 @@ def reduce_tree(tree, subset):
     tree.pre_reset()
     tree = __reduce(__bubble(tree, subset), subset)
     if tree.is_empty():
-        raise ReductionFailed()
+        raise ReductionFailed
 
     tree.post_reset()
     return tree
