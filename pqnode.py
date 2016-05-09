@@ -5,6 +5,7 @@ class Type(Enum):
     Q_NODE = 1
     P_NODE = 2
     LEAF = 3
+    DIRECTION_INDICATOR = 4
 
 
 class Label(Enum):
@@ -18,6 +19,11 @@ class Mark(Enum):
     QUEUED = 2
     BLOCKED = 3
     UNBLOCKED = 4
+
+class Direction(Enum):
+    NONE = 1
+    LEFT_TO_RIGHT = 2
+    RIGHT_TO_LEFT = 3
 
 
 class PnodeIterator:
@@ -117,8 +123,11 @@ class PQnode(object):
         # Number of pertinent leafs
         self.pertinent_leaf_count = 0
 
-        # Node type: LEAF, P_NODE or Q_NODE
+        # Node type: LEAF, P_NODE, Q_NODE or DIRECTION_INDICATOR
         self.node_type = node_type
+
+        # Direction of the indicator
+        self.direction = Direction.NONE
 
         # Reference to node data(like id of edge)
         self.data = data
