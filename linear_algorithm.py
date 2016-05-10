@@ -23,14 +23,12 @@ def upward_embed(graph):
         pertinent_root = tree.get_pertinent_root(subset)
         assert pertinent_root is not None
 
-        #print(tree)
         if pertinent_root.node_type == Type.Q_NODE:
             adj_list = tree.replace_full_children(pertinent_root, PQtree(subset1, True).get_root())
         else:
             adj_list = tree.replace_node(pertinent_root, PQtree(subset1, True).get_root())
 
-        #print("ADJ : " + str(adj_list))
-        #print(tree)
+        print(tree)
         tmp123 = [tmp.data.data.vertices[0] for tmp in adj_list]
         for vertex in tmp123:
             graph.new_adj_list[i].append(vertex)

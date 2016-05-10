@@ -130,6 +130,9 @@ class PQnode(object):
         # Direction of the indicator
         self.direction = Direction.NONE
 
+        # Reference to indicator child, used only by Q-node
+        self.indicator_child = None
+
         # Reference to node data(like id of edge)
         self.data = data
         if self.data is not None:
