@@ -7,7 +7,6 @@ def upward_embed(graph):
     universe = graph.get_edges_lower(1)
     n = graph.get_num_of_vertices()
     tree = PQtree(universe)
-    graph.adj_list[1] = []
     for i in range(2, n + 1):
         subset = graph.get_edges_higher(i)
         # if len(subset) == 0:
@@ -33,11 +32,10 @@ def upward_embed(graph):
         #print("ADJ : " + str(adj_list))
         #print(tree)
         tmp123 = [tmp.data.data.vertices[0] for tmp in adj_list]
-        graph.adj_list[i] = []
         for vertex in tmp123:
-            graph.adj_list[i].append(vertex)
+            graph.new_adj_list[i].append(vertex)
 
-    print(graph.adj_list)
+    print(graph.new_adj_list)
     return True
 
 # Assumed that upward_embed has been called for graph

@@ -1,5 +1,7 @@
 from graph import Graph
 from linear_algorithm import upward_embed
+from gamma_algorithm import gamma_algorithm
+import sys
 
 
 def main():
@@ -41,12 +43,23 @@ def main():
     # graph.construct_graph_from_list(data2)
     # graph.generate_random_graph(10, 0.5)
     graph.construct_graph_from_adj_list(edges_planar6)
+    print("Running linear algorithm with PQ-tree")
     result = upward_embed(graph)
-
     if result:
         print("Graph is planar")
     else:
         print("Graph is none planar")
+        return 1
+
+    print("Running gamma algorithm")
+    result = gamma_algorithm(graph)
+    if result:
+        print("Graph is planar")
+    else:
+        print("Graph is none planar")
+        return 1
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

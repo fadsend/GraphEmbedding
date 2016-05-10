@@ -246,10 +246,8 @@ class PQnode(object):
         assert len(endmost_full_children) == 2
 
         adjacency_list = []
-
         # Iterate from one endmost full child to another since order of self.full_children
-        # could differ from actual one. It a bit re-written version of QnodeIterator
-        # TODO: move to separate function to clear the code a bit
+        # could differ from actual one. It's a bit re-written version of QnodeIterator
         prev_child = endmost_full_children[0].get_sibling_with_label(Label.EMPTY)
         full_child = endmost_full_children[0]
         while True:
@@ -321,7 +319,6 @@ class PQnode(object):
 
     def replace_qnode(self, new_node):
         raise NotImplementedError()
-
 
     def count_siblings(self):
         count = 0

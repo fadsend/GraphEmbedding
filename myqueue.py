@@ -16,7 +16,7 @@ class MyQueue(object):
         self.data.append(data_to_add)
 
     def pop(self):
-        return self.data.pop()
+        return self.data.pop(0)
 
     def size(self):
         return len(self.data)

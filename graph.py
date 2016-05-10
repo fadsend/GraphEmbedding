@@ -1,5 +1,5 @@
 from pqnode import Data
-import random
+from enum import Enum
 
 
 class Edge(object):
@@ -27,60 +27,53 @@ class DirectedEdge(Edge):
     pass
 
 
+class GraphException(Exception):
+    pass
+
+
+class Color(Enum):
+    WHITE = 1
+    GRAY = 2
+    BLACK = 3
+
+
 class Graph(object):
 
     # TODO: temporary implementation. It should be changed for adjacency list
     def __init__(self):
         self.adj_list = {}
+        # Use another adjacency list to save initial graph
+        self.new_adj_list = {}
         self.edges_list = []
         self.num_of_vertices = 0
 
     def construct_graph_from_list(self, list_of_edges):
         tmp_vertices = []
         for edge in list_of_edges:
-            if edge[0] not in tmp_vertices:
-                self.num_of_vertices += 1
-                tmp_vertices.append(edge[0])
-            if edge[1] not in tmp_vertices:
-                self.num_of_vertices += 1
-                tmp_vertices.append(edge[1])
+            for i in range(2):
+                if edge[i] not in tmp_vertices:
+                    self.num_of_vertices += 1
+                    self.adj_list[edge[i]] = []
+                    self.new_adj_list[edge[i]] = []
+                    tmp_vertices.append(edge[i])
 
             self.edges_list.append(Data(UndirectedEdge(edge[0], edge[1])))
+            self.adj_list[edge[0]].append(edge[1])
+            self.adj_list[edge[1]].append(edge[0])
 
-    def construct_graph_from_adj_list(self, adj_list):
+    def construct_graph_from_adj_list(self, adj_list: dict):
         for i in adj_list.keys():
             self.num_of_vertices += 1
             for j in adj_list[i]:
                 if j < i:
                     continue
                 self.edges_list.append(Data(UndirectedEdge(i, j)))
+            self.new_adj_list[i] = []
+        self.adj_list = adj_list.copy()
 
-    # 1 :[3, 4, 5]
-    # 2: [4, 5, 6]
-    # Format:
-    # edges: [(from, to)]
-    def construct_graph(self, edges):
-        # Construct global list of all edges to use it as a reference
-        tmp_list = []
-        for edge in edges:
-            tmp_list.append(Data(edge))
-            self.edges_list[edge] = Data(edge)
+    def generate_random_graph(self, num_vertices, prob):
+        raise NotImplementedError()
 
-        for edge in edges:
-            first = edge[0]
-            second = edge[1]
-            if first not in self.adjList:
-                self.adjList[first] = []
-            if second is not None:
-                self.adjList[first].append(second)
-
-            if second not in self.adjList:
-                self.adjList[second] = []
-            self.adjList[second].append(first)
-
-    # Format:
-    # 1 - 2
-    # 3 - 2
     def read_from_file(self, filename):
         parsed_edges = []
         f = open(filename, "r")
@@ -89,12 +82,12 @@ class Graph(object):
             first_node = int(parsed[0])
             second_node = int(parsed[1])
             parsed_edges.append((first_node, second_node))
-
-        self.construct_graph(parsed_edges)
+        raise NotImplementedError()
 
     def compute_st_numbering(self):
-        raise NotImplemented
+        raise NotImplementedError()
 
+    # FIXME: implement more effectively
     def get_edges_lower(self, number):
         edges = []
         for edge in self.edges_list:
@@ -102,6 +95,8 @@ class Graph(object):
                 edges.append(edge)
         return edges
 
+    # FIXME: implement more effectively
+    # Perhaps it would be better to use map for storing edges
     def get_edges_higher(self, number):
         edges = []
         for edge in self.edges_list:
@@ -110,18 +105,48 @@ class Graph(object):
         return edges
 
     def get_num_of_vertices(self):
-        # return len(self.adjList)
         return self.num_of_vertices
 
-    def generate_random_graph(self, num_vertices, prob):
-        adj_list = {}
-        for i in range(num_vertices):
-            for j in range(num_vertices):
-                adj_list[i] = []
-                if random.random() < prob:
-                    adj_list[i].append(j)
+    def find_cycle(self):
+        marked = {v: False for v in self.adj_list.keys()}
+        path = []
 
-        self.construct_graph_from_adj_list(adj_list)
+        #for v in self.adj_list.keys():
+        #    res = False
+        #    if not marked[v]:
+        #        path, res = self.dfs(v, True)
+        #    if res:
+        #        break
+        #return path
+
+    # TODO: Implement working version
+    def dfs_cycle(self, start=1):
+        stack = []
+        labels = {i: Color.WHITE for i in self.adj_list.keys()}
+        path = []
+        labels[start] = Color.GRAY
+        stack.append(start)
+        while len(stack) > 0:
+            v = stack.pop()
+            for neighbour in self.get_adjacent_vertices(v):
+                if labels[neighbour] == Color.GRAY:
+                    return path
+                elif labels[neighbour] == Color.WHITE:
+                    labels[neighbour] = Color.GRAY
+                    stack.append(neighbour)
+                else:
+                    # XXX: How it could happend???
+                    pass
+            path.append(v)
+            if not labels[v]:
+                labels[v] = True
+                for new_vertex in self.get_adjacent_vertices(v):
+                    if not labels[new_vertex]:
+                        stack.append(new_vertex)
+        return path, False
+
+    def get_adjacent_vertices(self, vertex):
+        return self.adj_list[vertex]
 
     def __str__(self):
         tmp_str = ""
