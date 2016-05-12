@@ -21,12 +21,6 @@ class Mark(Enum):
     UNBLOCKED = 4
 
 
-class Direction(Enum):
-    NONE = 1
-    LEFT_TO_RIGHT = 2
-    RIGHT_TO_LEFT = 3
-
-
 class PnodeIterator:
     def __init__(self, node):
         assert node is not None
@@ -64,6 +58,32 @@ class QnodeIterator:
         self.prev = self.current
         self.current = tmp_node
         return child_to_return
+
+
+class DirectionIndicator(object):
+    id_counter = 0
+    list_of_instances = []
+
+    def __init__(self, data):
+        self.data = data
+        self.id = DirectionIndicator.id_counter
+        DirectionIndicator.id_counter += 1
+        DirectionIndicator.list_of_instances.append(self)
+        self.prev_node = None
+        self.next_node = None
+
+    def set_next_for_indicator(self, node):
+        self.next_node = node
+        if node:
+            node.prev_indicator = self
+
+    def set_prev_for_indicator(self, node):
+        self.prev_node = node
+        if node:
+            node.next_indicator = self
+
+    def __str__(self):
+        return str(self.data) + str(self.id)
 
 
 # Data class to store info in nodes. Also needed for cross-reference
@@ -127,11 +147,9 @@ class PQnode(object):
         # Node type: LEAF, P_NODE, Q_NODE or DIRECTION_INDICATOR
         self.node_type = node_type
 
-        # Direction of the indicator
-        self.direction = Direction.NONE
-
-        # Reference to indicator child, used only by Q-node
-        self.indicator_child = None
+        # Additional field to handle direction of indicator
+        self.prev_indicator = None
+        self.next_indicator = None
 
         # Reference to node data(like id of edge)
         self.data = data
@@ -221,7 +239,7 @@ class PQnode(object):
         new_node.parent = parent_node
         return adjacency_list
 
-    def replace_full_children(self, new_node, include_indicator=False):
+    def replace_full_children(self, new_node):
         assert new_node.node_type == Type.P_NODE
         assert self.node_type == Type.Q_NODE
 
@@ -262,7 +280,14 @@ class PQnode(object):
                 next_child = full_child.immediate_sublings[1]
             prev_child = full_child
             full_child = next_child
+            # Check if direction indicator is present and add it to a list if it is
+            if actual_child.next_indicator:
+                adjacency_list.append("|" + str(actual_child.next_indicator) + ">")
+            if actual_child.prev_indicator:
+                adjacency_list.append("<" + str(actual_child.prev_indicator) + "|")
             adjacency_list.extend(actual_child.collect_full_leaves())
+
+        direction_indicator = DirectionIndicator("!!!!")
 
         sibling1 = endmost_full_children[0].get_sibling_with_label(Label.EMPTY)
         sibling2 = endmost_full_children[1].get_sibling_with_label(Label.EMPTY)
@@ -282,6 +307,9 @@ class PQnode(object):
             # new_node's siblings are updated there
             sibling1.replace_sibling(endmost_full_children[0], new_node)
             sibling2.replace_sibling(endmost_full_children[1], new_node)
+
+        direction_indicator.set_next_for_indicator(new_node)
+        direction_indicator.set_prev_for_indicator(sibling1)
 
         self.full_children = []
         # Add new node to the list of full children

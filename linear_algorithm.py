@@ -1,6 +1,6 @@
 from pqtree import PQtree
 from pqtree import reduce_tree, ReductionFailed
-from pqnode import Type
+from pqnode import Type, DirectionIndicator
 
 
 def upward_embed(graph):
@@ -12,10 +12,12 @@ def upward_embed(graph):
         # if len(subset) == 0:
         #    continue
         tree = reduce_tree(tree, subset)
+        tmp_list = DirectionIndicator.list_of_instances
         # try:
         #    tree = reduce_tree(tree, subset)
         # except ReductionFailed:
         #    return False
+        print([str(i) for i in tmp_list])
 
         subset1 = graph.get_edges_lower(i)
 
@@ -29,7 +31,12 @@ def upward_embed(graph):
             adj_list = tree.replace_node(pertinent_root, PQtree(subset1, True).get_root())
 
         print(tree)
-        tmp123 = [tmp.data.data.vertices[0] for tmp in adj_list]
+        tmp123 = []
+        for tmp in adj_list:
+            if type(tmp) == str:
+                tmp123.append(tmp)
+            else:
+                tmp123.append(tmp.data.data.vertices[0])
         for vertex in tmp123:
             graph.new_adj_list[i].append(vertex)
 

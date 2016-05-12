@@ -40,14 +40,19 @@ class PQtree(object):
     # Note: tree must be reduced, and subset must be the same
     # as for reduction
     def get_pertinent_root(self, subset):
-        for element in subset:
-            if element.node_reference is None:
-                continue
-            pertinent_root = element.node_reference.parent
-            if pertinent_root is None or len(pertinent_root.full_children) == 1:
-                return element.node_reference
-            else:
-                return pertinent_root
+        assert subset is not None
+        assert len(subset) > 0
+        element = subset[0].node_reference
+        successor = element.parent
+        prev = element
+        while successor is not None and (successor.label == Label.FULL):
+            prev = successor
+            successor = successor.parent
+
+        if successor is None or successor.label == Label.EMPTY:
+            return prev
+        if successor.label == Label.PARTIAL:
+            return successor
 
     def get_root(self):
         return self.root
