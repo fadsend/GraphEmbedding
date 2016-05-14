@@ -45,7 +45,45 @@ def upward_embed(graph):
             graph.new_adj_list[iteration].append(vertex)
 
     print(graph.new_adj_list)
+    graph.new_adj_list = correct_direction(graph.new_adj_list, n)
+    print(graph.new_adj_list)
     return True
+
+
+# TODO: re-write
+def correct_direction(adj_list, n):
+    for i in range(n, 1, -1):
+        for j in range(len(adj_list[i])):
+            if type(adj_list[i][j]) == str:
+                if adj_list[i][j][0] == "|":
+                    should_revers = False
+                elif adj_list[i][j][0] == "<":
+                    should_revers = True
+                else:
+                    assert False
+
+                tmp_id = int(adj_list[i][j][1:-1])
+                if should_revers:
+                    for k in range(len(adj_list[tmp_id]) // 2 + 1):
+                        idx1 = k
+                        idx2 = len(adj_list[tmp_id]) - 1 - k
+                        adj_list[tmp_id][idx1], adj_list[tmp_id][idx2] = adj_list[tmp_id][idx2], adj_list[tmp_id][idx1]
+                        for p in [k, len(adj_list[tmp_id]) - 1 - k]:
+                            if type(adj_list[tmp_id][p]) == 'str':
+                                if adj_list[tmp_id][p][0] == '|':
+                                    adj_list[tmp_id][p][0] = '<'
+                                    adj_list[tmp_id][p][-1] = '|'
+                                elif adj_list[tmp_id][p][0] == '<':
+                                    adj_list[tmp_id][p][0] = '|'
+                                    adj_list[tmp_id][p][-1] = '>'
+                                else:
+                                    assert False
+                adj_list[i][j] = -1
+    for tmp in adj_list.keys():
+        if -1 in adj_list[tmp]:
+            adj_list[tmp].remove(-1)
+    return adj_list
+
 
 # Assumed that upward_embed has been called for graph
 def embed(graph):
