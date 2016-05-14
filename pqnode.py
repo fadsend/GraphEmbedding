@@ -69,6 +69,7 @@ class DirectionIndicator(object):
         self.id = DirectionIndicator.id_counter
         DirectionIndicator.id_counter += 1
         DirectionIndicator.list_of_instances.append(self)
+        # print("Direction indicator #" + str(self.id) + " is created")
         self.prev_node = None
         self.next_node = None
 
@@ -82,8 +83,44 @@ class DirectionIndicator(object):
         if node:
             node.next_indicator = self
 
+    def replace_node_for_indicator(self, old_node, new_node, label=None):
+        assert self.next_node or self.prev_node
+        result = False
+
+        # TODO: not sure what to do with prev_node == None or next_node == None
+        if self.next_node == old_node:
+            if label:
+                if self.prev_node and self.prev_node.label == label:
+                    self.set_next_for_indicator(new_node)
+                    result = True
+            else:
+                self.set_next_for_indicator(new_node)
+                result = True
+
+        if self.prev_node == old_node:
+            if label:
+                if self.next_node and self.next_node.label == label:
+                    self.set_prev_for_indicator(new_node)
+                    result = True
+            else:
+                self.set_prev_for_indicator(new_node)
+                result = True
+        return result
+
+    def add_node_for_indicator(self, new_node):
+        assert self.next_node or self.prev_node
+        assert not self.next_node and not self.prev_node
+        assert not new_node.next_indicator and not new_node.prev_indicator
+
+        if self.prev_node:
+            self.set_next_for_indicator(new_node)
+            return
+        if self.next_node:
+            self.set_prev_for_indicator(new_node)
+            return
+
     def __str__(self):
-        return str(self.data) + str(self.id)
+        return str(self.data)
 
 
 # Data class to store info in nodes. Also needed for cross-reference
@@ -239,13 +276,13 @@ class PQnode(object):
         new_node.parent = parent_node
         return adjacency_list
 
-    def replace_full_children(self, new_node):
-        assert new_node.node_type == Type.P_NODE
+    def replace_full_children(self, new_node, iteration):
+        assert new_node.node_type == Type.P_NODE or new_node.node_type == Type.LEAF
         assert self.node_type == Type.Q_NODE
 
         endmost_full_children = []
 
-        # TODO: handle case with only on full_children
+        # TODO: handle case with only one full_children
         if len(self.full_children) == 1:
             raise NotImplementedError()
 
@@ -266,6 +303,7 @@ class PQnode(object):
 
         assert len(endmost_full_children) == 2
 
+        found_direction_indicators = []
         adjacency_list = []
         # Iterate from one endmost full child to another since order of self.full_children
         # could differ from actual one. It's a bit re-written version of QnodeIterator
@@ -281,13 +319,21 @@ class PQnode(object):
             prev_child = full_child
             full_child = next_child
             # Check if direction indicator is present and add it to a list if it is
-            if actual_child.next_indicator:
-                adjacency_list.append("|" + str(actual_child.next_indicator) + ">")
             if actual_child.prev_indicator:
-                adjacency_list.append("<" + str(actual_child.prev_indicator) + "|")
+                if actual_child.prev_indicator not in found_direction_indicators:
+                    found_direction_indicators.append(actual_child.prev_indicator)
+                    adjacency_list.append("<" + str(actual_child.prev_indicator) + "|")
+                else:
+                    print("Repeated indicator")
+            if actual_child.next_indicator:
+                if actual_child.next_indicator not in found_direction_indicators:
+                    found_direction_indicators.append(actual_child.next_indicator)
+                    adjacency_list.append("|" + str(actual_child.next_indicator) + ">")
+                else:
+                    print("Repeated indicator 2")
             adjacency_list.extend(actual_child.collect_full_leaves())
 
-        direction_indicator = DirectionIndicator("!!!!")
+        direction_indicator = DirectionIndicator(str(iteration))
 
         sibling1 = endmost_full_children[0].get_sibling_with_label(Label.EMPTY)
         sibling2 = endmost_full_children[1].get_sibling_with_label(Label.EMPTY)
@@ -542,10 +588,35 @@ class PQnode(object):
         if self.node_type == Type.LEAF:
             return [self]
         full_leaves = []
+        found_direction_indicators = []
         for child in self.iter_children():
+            if child.prev_indicator:
+                if child.prev_indicator not in found_direction_indicators:
+                    found_direction_indicators.append(child.prev_indicator)
+                    full_leaves.append("<" + str(child.prev_indicator) + "|")
+                else:
+                    print("Repeated indicator 12")
+            if child.next_indicator:
+                if child.next_indicator not in found_direction_indicators:
+                    found_direction_indicators.append(child.next_indicator)
+                    full_leaves.append("|" + str(child.next_indicator) + ">")
+                else:
+                    print("Repeated indicator 22")
             if child.node_type == Type.LEAF:
                 full_leaves.append(child)
             else:
                 full_leaves.extend(child.collect_full_leaves())
         return full_leaves
 
+    def replace_direction_indicator(self, new_node, label=None):
+        if not self.next_indicator and not self.prev_indicator:
+            print("No indicator for the node")
+            return
+
+        if self.next_indicator:
+            if self.next_indicator.replace_node_for_indicator(self, new_node, label):
+                self.next_indicator = None
+
+        if self.prev_indicator:
+            if self.prev_indicator.replace_node_for_indicator(self, new_node, label):
+                self.prev_indicator = None

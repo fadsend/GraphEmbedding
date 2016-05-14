@@ -20,10 +20,13 @@ class PQtree(object):
         # self.pertinent_root = None
         # Root of the tree
         if len(universe) > 0 or create_root:
-            self.root = PQnode(node_type=Type.P_NODE, data=None)
-            # Form initial tree
-            for element in universe:
-                self.root.add_child(Type.LEAF, element)
+            if len(universe) != 1:
+                self.root = PQnode(node_type=Type.P_NODE, data=None)
+                # Form initial tree
+                for element in universe:
+                    self.root.add_child(Type.LEAF, element)
+            else:
+                self.root = PQnode(node_type=Type.LEAF, data=universe[0])
         else:
             self.root = None
 
@@ -63,15 +66,26 @@ class PQtree(object):
         else:
             return self.print_tree(self.root)
 
-    def print_tree(self, node):
+    def print_tree(self, node: PQnode):
         result = ""
+
+        # TODO: find a way to print indicator
+        if node.prev_indicator:
+            prev_node = node.prev_indicator.prev_node
+            next_node = node.prev_indicator.next_node
+            if prev_node:
+                prev_node = prev_node.id
+            if next_node:
+                next_node = next_node.id
+            result += " " + str(node.prev_indicator) + \
+                      "!( " + str(prev_node) +\
+                      " -> " + str(next_node) + ")!"
+
         if node.node_type == Type.Q_NODE:
             result += str(node.id) + ": { "
-            # child = node.left_endmost
             # while child is not None:
             for child in node.iter_children():
                 result += self.print_tree(child) + ", "
-                # child = child.right_subling
 
             # Remove last comma
             result += " }"
@@ -84,7 +98,7 @@ class PQtree(object):
             # Remove last comma
             result += " ]"
         else:
-            result = str(node.data)
+            result += str(node.id) + ":(" + str(node.data) + ")"
 
         return result
 
@@ -129,6 +143,7 @@ class PQtree(object):
         node.label = Label.FULL
         if not is_root and node not in node.parent.full_children:
             node.parent.full_children.append(node)
+        print("[Template_P1] result = True")
         return True
 
     @staticmethod
@@ -137,6 +152,7 @@ class PQtree(object):
             print("[Template_P2] result = " + str(False))
             return False
 
+        # TODO: update direction indicators here
         if len(node.full_children) >= 2:
             full_node = PQnode()
             full_node.node_type = Type.P_NODE
@@ -161,6 +177,7 @@ class PQtree(object):
         new_qnode.label = Label.PARTIAL
 
         node.parent.replace_partial_child(node, new_qnode)
+        node.replace_direction_indicator(new_qnode)
 
         # Special case when only one full child
         if len(node.full_children) == 1:
@@ -337,7 +354,7 @@ class PQtree(object):
             return False
 
         if len(node.full_children) > 0:
-
+            # TODO: update direction indicator here
             # Only one full child, no need to create new P-node
             if len(node.full_children) == 1:
                 full_node = node.full_children[0]
@@ -362,10 +379,16 @@ class PQtree(object):
             full_node.add_sibling(full_child2)
             full_child2.add_sibling(full_node)
 
+            partial_qnode1.replace_direction_indicator(full_node)
+            partial_qnode2.replace_direction_indicator(full_node)
         else:
             # In this case just merge partial nodes
             full_child1.add_sibling(full_child2)
             full_child2.add_sibling(full_child1)
+
+            # Update direction indicator for partial_qnode1
+            partial_qnode1.replace_direction_indicator(full_child1)
+            partial_qnode2.replace_direction_indicator(full_child2)
 
         partial_qnode1.replace_endmost_child(full_child1, empty_child2)
         empty_child2.parent = partial_qnode1
@@ -450,6 +473,8 @@ class PQtree(object):
                 else:
                     node.replace_endmost_child(sibling_of_partial, partial_child)
 
+                partial_node.replace_direction_indicator(partial_child, child.label)
+
                 # Override parent node just in case
                 partial_child.parent = node
                 if partial_child.label == Label.FULL:
@@ -529,8 +554,8 @@ class PQtree(object):
         return self.root is None
 
     @staticmethod
-    def replace_full_children(node: PQnode, new_node: PQnode):
-        return node.replace_full_children(new_node)
+    def replace_full_children(node: PQnode, new_node: PQnode, iteration):
+        return node.replace_full_children(new_node, iteration)
 
     def replace_node(self, node: PQnode, new_node: PQnode):
         if node == self.root:

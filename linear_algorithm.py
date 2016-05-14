@@ -7,8 +7,8 @@ def upward_embed(graph):
     universe = graph.get_edges_lower(1)
     n = graph.get_num_of_vertices()
     tree = PQtree(universe)
-    for i in range(2, n + 1):
-        subset = graph.get_edges_higher(i)
+    for iteration in range(2, n + 1):
+        subset = graph.get_edges_higher(iteration)
         # if len(subset) == 0:
         #    continue
         tree = reduce_tree(tree, subset)
@@ -19,15 +19,19 @@ def upward_embed(graph):
         #    return False
         print([str(i) for i in tmp_list])
 
-        subset1 = graph.get_edges_lower(i)
+        subset1 = graph.get_edges_lower(iteration)
 
         # Save pertinent root before its re-written on the next iteration
         pertinent_root = tree.get_pertinent_root(subset)
         assert pertinent_root is not None
 
+        print("---------------END of reduction --------------")
+        print(tree)
         if pertinent_root.node_type == Type.Q_NODE:
-            adj_list = tree.replace_full_children(pertinent_root, PQtree(subset1, True).get_root())
+            print("Replacing Q-node")
+            adj_list = tree.replace_full_children(pertinent_root, PQtree(subset1, True).get_root(), iteration)
         else:
+            print("Replacing P-node")
             adj_list = tree.replace_node(pertinent_root, PQtree(subset1, True).get_root())
 
         print(tree)
@@ -38,7 +42,7 @@ def upward_embed(graph):
             else:
                 tmp123.append(tmp.data.data.vertices[0])
         for vertex in tmp123:
-            graph.new_adj_list[i].append(vertex)
+            graph.new_adj_list[iteration].append(vertex)
 
     print(graph.new_adj_list)
     return True
