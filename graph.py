@@ -108,42 +108,40 @@ class Graph(object):
         return self.num_of_vertices
 
     def find_cycle(self):
-        marked = {v: False for v in self.adj_list.keys()}
-        path = []
+        max_cycle = []
 
-        #for v in self.adj_list.keys():
-        #    res = False
-        #    if not marked[v]:
-        #        path, res = self.dfs(v, True)
-        #    if res:
-        #        break
-        #return path
+        def dfs_visit(start):
+            stack = []
+            path = []
+            marks = {i: False for i in self.adj_list.keys()}
+            stack.append(start)
 
-    # TODO: Implement working version
-    def dfs_cycle(self, start=1):
-        stack = []
-        labels = {i: Color.WHITE for i in self.adj_list.keys()}
-        path = []
-        labels[start] = Color.GRAY
-        stack.append(start)
-        while len(stack) > 0:
-            v = stack.pop()
-            for neighbour in self.get_adjacent_vertices(v):
-                if labels[neighbour] == Color.GRAY:
-                    return path
-                elif labels[neighbour] == Color.WHITE:
-                    labels[neighbour] = Color.GRAY
-                    stack.append(neighbour)
+            while len(stack) > 0:
+                v = stack.pop()
+                if not marks[v]:
+                    path.append(v)
+                    marks[v] = True
+                    for adj_v in self.get_adjacent_vertices(v):
+                        stack.append(adj_v)
                 else:
-                    # XXX: How it could happend???
-                    pass
-            path.append(v)
-            if not labels[v]:
-                labels[v] = True
-                for new_vertex in self.get_adjacent_vertices(v):
-                    if not labels[new_vertex]:
-                        stack.append(new_vertex)
-        return path, False
+                    # Check for backward edges
+                    if len(path) >= 2 and path[-2] == v:
+                        continue
+                    path.append(v)
+                    # Remove excess vertices from path
+                    return path[path.index(v):]
+            return []
+
+        # TODO: not sure it worth to check every vertex for cycle
+        # or just stop when the first one is found
+        # It seems that for every vertex dfs would return the same
+        # cycle in most cases
+        for i in self.adj_list.keys():
+            cycle = dfs_visit(i)
+            print(cycle)
+            if len(cycle) > len(max_cycle):
+                max_cycle = cycle
+        return max_cycle[:-1]
 
     def get_adjacent_vertices(self, vertex):
         return self.adj_list[vertex]

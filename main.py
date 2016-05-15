@@ -53,7 +53,27 @@ def main():
     embedded_graph = embed(graph)
     embedded_graph.print_adj()
 
-    print("Running gamma algorithm")
+    test_graph1 = {
+        1: [6, 3, 5, 2],
+        2: [1, 3, 5],
+        3: [1, 2, 4, 7],
+        4: [3, 7, 8, 5, 6],
+        5: [2, 1, 6, 4],
+        6: [1, 5, 4, 7],
+        7: [6, 3, 4],
+        8: [4, 7],
+    }
+
+    test_graph2 = {
+
+    }
+
+    graph = Graph()
+    graph.construct_graph_from_adj_list(test_graph1)
+    # graph.construct_graph_from_adj_list(edges_planar6)
+    print("#######################################################")
+    print("###############Running gamma algorithm#################")
+    print("#######################################################")
     result = gamma_algorithm(graph)
     if result:
         print("Graph is planar")
