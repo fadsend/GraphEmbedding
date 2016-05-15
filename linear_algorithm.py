@@ -1,6 +1,7 @@
 from pqtree import PQtree
 from pqtree import reduce_tree, ReductionFailed
 from pqnode import Type, DirectionIndicator
+import copy
 
 
 def upward_embed(graph):
@@ -87,4 +88,20 @@ def correct_direction(adj_list, n):
 
 # Assumed that upward_embed has been called for graph
 def embed(graph):
-    pass
+    assert len(graph.new_adj_list.keys()) > 0
+    marks = {i: False for i in graph.new_adj_list.keys()}
+    # Use deepcopy since dict has an lists as its values
+    graph.adj_list = copy.deepcopy(graph.new_adj_list)
+    dfs(list(graph.new_adj_list.keys())[-1], graph, marks)
+    return graph
+
+
+def dfs(vertex, graph, marks=None):
+    marks[vertex] = True
+    for adj_v in graph.new_adj_list[vertex]:
+        graph.adj_list[adj_v].insert(0, vertex)
+        if not marks[adj_v]:
+            dfs(adj_v, graph, marks)
+
+
+

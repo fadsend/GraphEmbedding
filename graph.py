@@ -154,6 +154,9 @@ class Graph(object):
             tmp_str += " " + str(edge) + " "
         return tmp_str
 
+    def print_adj(self):
+        print(self.adj_list)
+
 if __name__ == "__main__":
     graph = Graph()
     print(graph)

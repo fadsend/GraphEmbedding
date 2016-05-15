@@ -1,5 +1,5 @@
 from graph import Graph
-from linear_algorithm import upward_embed
+from linear_algorithm import upward_embed, embed
 from gamma_algorithm import gamma_algorithm
 import sys
 
@@ -50,6 +50,8 @@ def main():
     else:
         print("Graph is none planar")
         return 1
+    embedded_graph = embed(graph)
+    embedded_graph.print_adj()
 
     print("Running gamma algorithm")
     result = gamma_algorithm(graph)
