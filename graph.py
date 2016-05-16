@@ -12,6 +12,9 @@ class Edge(object):
     def get_lower(self):
         return min(self.vertices[0], self.vertices[1])
 
+    def __str__(self):
+        return "(" + str(self.vertices[0]) + ", " + str(self.vertices[1]) + ")"
+
 
 class UndirectedEdge(Edge):
 
@@ -46,6 +49,28 @@ class Graph(object):
         self.new_adj_list = {}
         self.edges_list = []
         self.num_of_vertices = 0
+
+    def add_edge(self, edge):
+        assert type(edge) == Edge
+        self.edges_list.append(edge)
+        v0 = edge.vertices[0]
+        v1 = edge.vertices[1]
+
+        if v0 in self.adj_list and v1 in self.adj_list:
+            if v0 in self.adj_list[v1] and v1 in self.adj_list[v0]:
+                return
+
+        if v0 not in self.adj_list.keys():
+            self.adj_list[v0] = [v1]
+            self.num_of_vertices += 1
+        else:
+            self.adj_list[v0].append(v1)
+
+        if v1 not in self.adj_list.keys():
+            self.adj_list[v1] = [v0]
+            self.num_of_vertices += 1
+        else:
+            self.adj_list[v1].append(v0)
 
     def construct_graph_from_list(self, list_of_edges):
         tmp_vertices = []
@@ -145,6 +170,51 @@ class Graph(object):
 
     def get_adjacent_vertices(self, vertex):
         return self.adj_list[vertex]
+
+    # TODO: use dict with True/False in vertex in cycle
+    def get_segments(self, cycle):
+        segments = []
+
+        # Collect neighbours for the vertices in the cycle to
+        # distinguish edges between them with one-edge segments
+        neighbors = {}
+        for i in range(1, len(cycle) - 1):
+            neighbors[cycle[i]] = (cycle[i - 1], cycle[i + 1])
+        neighbors[cycle[0]] = (cycle[1], cycle[-1])
+        neighbors[cycle[-1]] = (cycle[-2], cycle[0])
+
+        # Search for single-edge segments
+        for v in cycle:
+            for n in self.adj_list[v]:
+                if n not in neighbors[v] and n in cycle:
+                    seg = Graph()
+                    seg.construct_graph_from_list([Edge(v, n)])
+                    segments.append(seg)
+
+        def dfs_segment(start, dfs_marks, graph_cycle, segment):
+            stack = [start]
+
+            while len(stack) > 0:
+                vertex = stack.pop()
+                if not dfs_marks[vertex]:
+                    dfs_marks[vertex] = True
+                    for adj_vertex in self.adj_list[vertex]:
+                        if not(vertex in graph_cycle and adj_vertex in neighbors[vertex]):
+                            segment.add_edge(Edge(vertex, adj_vertex))
+                        if adj_vertex not in graph_cycle:
+                            stack.append(adj_vertex)
+                        else:
+                            dfs_marks[adj_vertex] = True
+
+        # Search for segments with multiple edges
+        marks = {i: False for i in self.adj_list.keys()}
+        for v in cycle:
+            if not marks[v]:
+                seg = Graph()
+                dfs_segment(v, marks, cycle, seg)
+                segments.append(seg)
+
+        return segments
 
     def __str__(self):
         tmp_str = ""

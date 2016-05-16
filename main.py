@@ -69,8 +69,8 @@ def main():
     }
 
     graph = Graph()
-    graph.construct_graph_from_adj_list(test_graph1)
-    # graph.construct_graph_from_adj_list(edges_planar6)
+    # graph.construct_graph_from_adj_list(test_graph1)
+    graph.construct_graph_from_adj_list(edges_planar6)
     print("#######################################################")
     print("###############Running gamma algorithm#################")
     print("#######################################################")
