@@ -216,6 +216,9 @@ class Graph(object):
 
         return segments
 
+    def embedded_on_face(self, face, segment):
+        return False
+
     def __str__(self):
         tmp_str = ""
         for edge in self.edges_list:
