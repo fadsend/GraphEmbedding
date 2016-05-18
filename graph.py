@@ -48,7 +48,7 @@ class Graph(object):
         # Use another adjacency list to save initial graph
         self.new_adj_list = {}
         self.edges_list = []
-        self.num_of_vertices = 0 
+        self.num_of_vertices = 0
 
     def add_edge(self, edge):
         assert type(edge) == Edge
