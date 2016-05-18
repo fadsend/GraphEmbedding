@@ -29,7 +29,7 @@ class PnodeIterator:
 
     def __iter__(self):
         return iter(self.node.circular_link)
-    
+
 
 class QnodeIterator:
     def __init__(self, node):
