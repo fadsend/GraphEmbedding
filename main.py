@@ -50,10 +50,10 @@ def main():
     }
 
     graphs_lists = [
-        edges_planar6,
+        #edges_planar6,
         #edges_non_planar6,
         #tmp_graph1_non_planar,
-        #tmp_graph1_planar,
+        tmp_graph1_planar,
     ]
 
     for g in graphs_lists:

@@ -66,18 +66,16 @@ def correct_direction(adj_list, n):
 
                 tmp_id = int(adj_list[i][j][1:-1])
                 if should_revers:
-                    for k in range(len(adj_list[tmp_id]) // 2 + 1):
+                    for k in range(len(adj_list[tmp_id]) // 2):
                         idx1 = k
                         idx2 = len(adj_list[tmp_id]) - 1 - k
                         adj_list[tmp_id][idx1], adj_list[tmp_id][idx2] = adj_list[tmp_id][idx2], adj_list[tmp_id][idx1]
                         for p in [k, len(adj_list[tmp_id]) - 1 - k]:
-                            if type(adj_list[tmp_id][p]) == 'str':
-                                if adj_list[tmp_id][p][0] == '|':
-                                    adj_list[tmp_id][p][0] = '<'
-                                    adj_list[tmp_id][p][-1] = '|'
-                                elif adj_list[tmp_id][p][0] == '<':
-                                    adj_list[tmp_id][p][0] = '|'
-                                    adj_list[tmp_id][p][-1] = '>'
+                            if type(adj_list[tmp_id][p]) == str:
+                                if adj_list[tmp_id][p][0] == "|":
+                                    adj_list[tmp_id][p] = "< " + adj_list[tmp_id][p][1] + "|"
+                                elif adj_list[tmp_id][p][0] == "<":
+                                    adj_list[tmp_id][p] = "|" + adj_list[tmp_id][p][1] + ">"
                                 else:
                                     assert False
                 adj_list[i][j] = -1
