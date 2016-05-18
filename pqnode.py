@@ -119,6 +119,13 @@ class DirectionIndicator(object):
             self.set_prev_for_indicator(new_node)
             return
 
+    def has_nodes(self, node1, node2):
+        if self.next_node == node1 and self.prev_node == node2:
+            return True
+        if self.next_node == node2 and self.prev_node == node1:
+            return True
+        return False
+
     def __str__(self):
         return str(self.data)
 
@@ -233,6 +240,8 @@ class PQnode(object):
         assert self.node_type != Type.LEAF
 
         if self.node_type == Type.P_NODE:
+            if old_child not in self.circular_link:
+                print("FAIL")
             self.circular_link.remove(old_child)
             self.circular_link.append(new_child)
         else:
@@ -282,9 +291,22 @@ class PQnode(object):
 
         endmost_full_children = []
 
-        # TODO: handle case with only one full_children
+        # Special case for single full children
         if len(self.full_children) == 1:
-            raise NotImplementedError()
+            full_child = self.full_children[0]
+            adjacency_list = []
+            for i in range(2):
+                if full_child.immediate_sublings[i]:
+                    full_child.immediate_sublings[i].replace_sibling(full_child, new_node)
+                if self.endmost_children[i] == full_child:
+                    self.replace_endmost_child(full_child, new_node)
+            self.full_children = []
+            adjacency_list.append(full_child)
+            if full_child.next_indicator:
+                adjacency_list.append("|" + str(full_child.next_indicator) + ">")
+            elif full_child.prev_indicator:
+                adjacency_list.append("<" + str(full_child.prev_indicator) + "|")
+            return adjacency_list
 
         # Only need to update pointers for first and last full children
         for full_child in self.full_children:
@@ -364,6 +386,10 @@ class PQnode(object):
 
         # Only one children remain
         if self.endmost_children[0] == self.endmost_children[1]:
+            # Special case for the last iteration. We could have
+            # Q-node as a root with single empty P-node child
+            if len(self.endmost_children[0].circular_link) == 0:
+                return adjacency_list
             self.replace_qnode(self.endmost_children[0])
 
         if not self.is_valid_qnode():
@@ -620,3 +646,24 @@ class PQnode(object):
         if self.prev_indicator:
             if self.prev_indicator.replace_node_for_indicator(self, new_node, label):
                 self.prev_indicator = None
+
+    def has_indicator(self, other_node) -> bool:
+        if self.prev_indicator:
+            if self.prev_indicator.has_nodes(self, other_node):
+                return True
+
+        if self.next_indicator:
+            if self.next_indicator.has_nodes(self, other_node):
+                return True
+        return False
+
+    def get_indicator(self, other_node) -> DirectionIndicator:
+        if self.prev_indicator:
+            if self.prev_indicator.has_nodes(self, other_node):
+                return self.prev_indicator
+
+        if self.next_indicator:
+            if self.next_indicator.has_nodes(self, other_node):
+                return self.prev_indicator
+        return None
+

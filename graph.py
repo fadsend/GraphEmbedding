@@ -109,9 +109,6 @@ class Graph(object):
             parsed_edges.append((first_node, second_node))
         raise NotImplementedError()
 
-    def compute_st_numbering(self):
-        raise NotImplementedError()
-
     # FIXME: implement more effectively
     def get_edges_lower(self, number):
         edges = []
@@ -217,7 +214,11 @@ class Graph(object):
         return segments
 
     def embedded_on_face(self, face, segment):
-        return False
+        raise NotImplementedError()
+
+    def compute_st_numbering(self):
+        return None
+  #      raise NotImplementedError()
 
     def __str__(self):
         tmp_str = ""

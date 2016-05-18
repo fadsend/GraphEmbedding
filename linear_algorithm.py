@@ -5,6 +5,7 @@ import copy
 
 
 def upward_embed(graph):
+    graph.compute_st_numbering()
     universe = graph.get_edges_lower(1)
     n = graph.get_num_of_vertices()
     tree = PQtree(universe)
@@ -12,12 +13,12 @@ def upward_embed(graph):
         subset = graph.get_edges_higher(iteration)
         # if len(subset) == 0:
         #    continue
-        tree = reduce_tree(tree, subset)
+        try:
+            tree = reduce_tree(tree, subset)
+        except ReductionFailed:
+            return False
         tmp_list = DirectionIndicator.list_of_instances
-        # try:
-        #    tree = reduce_tree(tree, subset)
-        # except ReductionFailed:
-        #    return False
+
         print([str(i) for i in tmp_list])
 
         subset1 = graph.get_edges_lower(iteration)
@@ -81,7 +82,7 @@ def correct_direction(adj_list, n):
                                     assert False
                 adj_list[i][j] = -1
     for tmp in adj_list.keys():
-        if -1 in adj_list[tmp]:
+        while -1 in adj_list[tmp]:
             adj_list[tmp].remove(-1)
     return adj_list
 
