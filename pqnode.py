@@ -1,4 +1,5 @@
 from enum import Enum
+from llist import dllist
 
 
 class Type(Enum):
@@ -24,19 +25,11 @@ class Mark(Enum):
 class PnodeIterator:
     def __init__(self, node):
         assert node is not None
-        self.i = 0
         self.node = node
 
     def __iter__(self):
-        return self
-
-    def __next__(self):
-        if len(self.node.circular_link) <= self.i:
-            raise StopIteration
-        child_to_return = self.node.circular_link[self.i]
-        self.i += 1
-        return child_to_return
-
+        return iter(self.node.circular_link)
+    
 
 class QnodeIterator:
     def __init__(self, node):
@@ -152,13 +145,13 @@ class PQnode(object):
         PQnode.id_counter += 1
 
         # Linked list of node's children. Used only by P-node.
-        self.circular_link = []
+        self.circular_link = dllist()
 
         # Reference to the last node's child. Used only by Q-node.
         self.endmost_children = [None, None]
 
         # Set of full node's children
-        self.full_children = []
+        self.full_children = dllist()
 
         # Tuple of immediate sublings.
         # For children of P-node it just a (None, None)
@@ -180,7 +173,7 @@ class PQnode(object):
         self.is_pseudo_node = False
 
         # Set of all partial children of the node
-        self.partial_children = []
+        self.partial_children = dllist()
 
         # Number of pertinent children Full or partial
         self.pertinent_child_count = 0
@@ -202,6 +195,12 @@ class PQnode(object):
         else:
             print("New node is created: id = " + str(self.id))
 
+        # Aux references for lists of its parent
+        self.full_list_node = None
+        self.circular_list_node = None
+        self.queue_list_node = None
+        self.partial_list_node = None
+
     def get_num_siblings(self):
         count = 0
         for subling in self.immediate_sublings:
@@ -220,30 +219,28 @@ class PQnode(object):
 
     def move_full_children(self, new_node):
         for full_child in self.full_children:
-            self.circular_link.remove(full_child)
-            new_node.circular_link.append(full_child)
+            self.circular_link.remove(full_child.circular_list_node)
+            full_child.circular_list_node = new_node.circular_link.append(full_child)
             full_child.parent = new_node
-            new_node.full_children.append(full_child)
+            full_child.full_list_node = new_node.full_children.append(full_child)
 
-        self.full_children = []
+        self.full_children = dllist()
 
     # Useful to move empty children after full were already moved
     def move_children(self, new_node):
         for child in self.circular_link:
-            new_node.circular_link.append(child)
+            child.circular_list_node = new_node.circular_link.append(child)
             child.parent = new_node
 
-        self.circular_link = []
+        self.circular_link = dllist()
 
     # Replaces child of node depending on current type
     def replace_child(self, old_child, new_child):
         assert self.node_type != Type.LEAF
 
         if self.node_type == Type.P_NODE:
-            if old_child not in self.circular_link:
-                print("FAIL")
-            self.circular_link.remove(old_child)
-            self.circular_link.append(new_child)
+            self.circular_link.remove(old_child.circular_list_node)
+            new_child.circular_list_node = self.circular_link.append(new_child)
         else:
             old_child.replace_qnode_child(new_child)
 
@@ -267,6 +264,7 @@ class PQnode(object):
         self.clear_siblings()
         self.parent = None
 
+    # TODO: not sure about lists here
     def replace(self, new_node):
         # assert self.node_type == Type.P_NODE
         assert self.parent is not None
@@ -280,8 +278,8 @@ class PQnode(object):
 
         parent_node = self.parent
         parent_node.replace_child(self, new_node)
-        parent_node.full_children = []
-        parent_node.full_children.append(new_node)
+        parent_node.full_children = dllist()
+        new_node.full_list_node = parent_node.full_children.append(new_node)
         new_node.parent = parent_node
         return adjacency_list
 
@@ -293,14 +291,14 @@ class PQnode(object):
 
         # Special case for single full children
         if len(self.full_children) == 1:
-            full_child = self.full_children[0]
+            full_child = self.full_children.nodeat(0).value
             adjacency_list = []
             for i in range(2):
                 if full_child.immediate_sublings[i]:
                     full_child.immediate_sublings[i].replace_sibling(full_child, new_node)
                 if self.endmost_children[i] == full_child:
                     self.replace_endmost_child(full_child, new_node)
-            self.full_children = []
+            self.full_children = dllist()
             adjacency_list.append(full_child)
             if full_child.next_indicator:
                 adjacency_list.append("|" + str(full_child.next_indicator) + ">")
@@ -379,7 +377,7 @@ class PQnode(object):
         direction_indicator.set_next_for_indicator(new_node)
         direction_indicator.set_prev_for_indicator(sibling1)
 
-        self.full_children = []
+        self.full_children = dllist()
         # Add new node to the list of full children
         new_node.parent = self
         new_node.mark_full()
@@ -410,7 +408,7 @@ class PQnode(object):
 
     def update_to_pnode(self):
         for child in self.iter_children():
-            self.circular_link.append(child)
+            child.circular_list_node = self.circular_link.append(child)
 
         self.clear_endmost()
         self.clear_siblings()
@@ -478,9 +476,9 @@ class PQnode(object):
         new_child.parent = self
 
         # Add to list of partial children for each type of node
-        self.partial_children.append(new_child)
+        new_child.partial_list_node = self.partial_children.append(new_child)
         if old_child in self.partial_children:
-            self.partial_children.remove(old_child)
+            self.partial_children.remove(old_child.partial_list_node)
 
         self.replace_child(old_child, new_child)
 
@@ -506,20 +504,22 @@ class PQnode(object):
         return (self.__get_with_label(self.immediate_sublings, label),
                 self.__get_with_label(self.immediate_sublings[1:], label))
 
+    # TODO: should avoid "in" operator here
     def mark_full(self):
         self.label = Label.FULL
         if self.parent is not None and \
            self not in self.parent.full_children:
-            self.parent.full_children.append(self)
+            self.full_list_node = self.parent.full_children.append(self)
 
     def mark_empty(self):
         self.label = Label.EMPTY
 
+    # TODO: the same as for mark_full
     def mark_partial(self):
         self.label = Label.PARTIAL
         if self.parent is not None and \
            self not in self.parent.partial_children:
-            self.parent.partial_children.append(self)
+            self.partial_list_node = self.parent.partial_children.append(self)
 
     def __str__(self):
         return str(self.data)
@@ -530,8 +530,8 @@ class PQnode(object):
                 child.reset()
 
         # Common part for all nodes
-        self.full_children = []
-        self.partial_children = []
+        self.full_children = dllist()
+        self.partial_children = dllist()
         self.pertinent_child_count = 0
         self.pertinent_leaf_count = 0
         self.mark = Mark.UNMARKED
@@ -539,15 +539,15 @@ class PQnode(object):
         self.is_pseudo_node = False
 
     def full_reset_node(self):
-        self.full_children = []
-        self.partial_children = []
+        self.full_children = dllist()
+        self.partial_children = dllist()
         self.pertinent_child_count = 0
         self.pertinent_leaf_count = 0
         self.mark = Mark.UNMARKED
         self.label = Label.EMPTY
         self.clear_siblings()
         self.clear_endmost()
-        self.circular_link = []
+        self.circular_link = dllist()
         self.is_pseudo_node = False
 
     def add_child(self, node_type, data=None):
@@ -555,7 +555,7 @@ class PQnode(object):
         new_node.parent = self
 
         if self.node_type == Type.P_NODE:
-            self.circular_link.append(new_node)
+            new_node.circular_list_node = self.circular_link.append(new_node)
         else:
             if self.endmost_children[0] is not None:
                 tmp_node = self.endmost_children[1]

@@ -1,5 +1,6 @@
 from pqnode import PQnode, Type, Mark, Label
 import myqueue
+from llist import dllist
 
 
 class ReductionFailed(Exception):
@@ -141,8 +142,9 @@ class PQtree(object):
             return False
 
         node.label = Label.FULL
+        # TODO: get rid of "in" operator
         if not is_root and node not in node.parent.full_children:
-            node.parent.full_children.append(node)
+            node.full_list_node = node.parent.full_children.append(node)
         print("[Template_P1] result = True node: " + str(node.id))
         return True
 
@@ -158,7 +160,7 @@ class PQtree(object):
             full_node.node_type = Type.P_NODE
             full_node.parent = node
             node.move_full_children(full_node)
-            node.circular_link.append(full_node)
+            full_node.circular_list_node = node.circular_link.append(full_node)
             full_node.mark_full()
 
         node.mark_partial()
@@ -181,9 +183,9 @@ class PQtree(object):
 
         # Special case when only one full child
         if len(node.full_children) == 1:
-            full_child = node.full_children[0]
-            node.full_children = []
-            node.circular_link.remove(full_child)
+            full_child = node.full_children.nodeat(0).value
+            node.full_children = dllist()
+            node.circular_link.remove(full_child.circular_list_node)
         # Otherwise create new P-node
         else:
             full_child = PQnode()
@@ -196,8 +198,8 @@ class PQtree(object):
 
         # If only one empty child
         if len(node.circular_link) - len(node.full_children) == 1:
-            empty_child = node.circular_link[0]
-            node.circular_link = []
+            empty_child = node.circular_link.nodeat(0).value
+            node.circular_link = dllist()
         else:
             empty_child = node
 
@@ -219,7 +221,7 @@ class PQtree(object):
             return False
 
         # Should be Q-node
-        partial_child = node.partial_children[0]
+        partial_child = node.partial_children.nodeat(0).value
         empty_child = partial_child.get_endmost_child_with_label(Label.EMPTY)
         full_child = partial_child.get_endmost_child_with_label(Label.FULL)
 
@@ -229,9 +231,9 @@ class PQtree(object):
 
         if len(node.full_children) > 0:
             if len(node.full_children) == 1:
-                new_full_node = node.full_children[0]
-                node.full_children = []
-                node.circular_link.remove(new_full_node)
+                new_full_node = node.full_children.nodeat(0).value
+                node.full_children = dllist()
+                node.circular_link.remove(new_full_node.circular_list_node)
             else:
                 new_full_node = PQnode()
                 new_full_node.node_type = Type.P_NODE
@@ -279,7 +281,7 @@ class PQtree(object):
         node_parent = node.parent
         assert node_parent is not None
 
-        partial_node = node.partial_children[0]
+        partial_node = node.partial_children.nodeat(0).value
         assert partial_node.node_type == Type.Q_NODE
 
         empty_child = partial_node.get_endmost_child_with_label(Label.EMPTY)
@@ -296,9 +298,9 @@ class PQtree(object):
                 node.move_full_children(full_node)
             else:
                 # node.full_children has a len == 1 here
-                full_node = node.full_children[0]
-                node.full_children = []
-                node.circular_link.remove(full_node)
+                full_node = node.full_children.nodeat(0).value
+                node.full_children = dllist()
+                node.circular_link.remove(full_node.circular_list_node)
 
             full_node.parent = partial_node
             full_node.mark_full()
@@ -313,8 +315,8 @@ class PQtree(object):
                 indicator.replace_node_for_indicator(None, full_node)
 
         # Update links
-        node.circular_link.remove(partial_node)
-        node.partial_children.remove(partial_node)
+        node.circular_link.remove(partial_node.circular_list_node)
+        node.partial_children.remove(partial_node.partial_list_node)
 
         node_parent.replace_partial_child(node, partial_node)
         node.replace_direction_indicator(partial_node)
@@ -325,8 +327,8 @@ class PQtree(object):
             empty_node = node
             # If only one child is left, use it instead of P-node
             if len(node.circular_link) == 1:
-                empty_node = node.circular_link[0]
-                node.circular_link = []
+                empty_node = node.circular_link.nodeat(0).value
+                node.circular_link = dllist()
 
             # Move empty child to partial node
             partial_node.replace_endmost_child(empty_child, empty_node)
@@ -353,7 +355,7 @@ class PQtree(object):
             print("[Template_P6] 2) result = False node: " + str(node.id))
             return False
 
-        partial_qnode1 = node.partial_children[0]
+        partial_qnode1 = node.partial_children.nodeat(0).value
         assert partial_qnode1.node_type == Type.Q_NODE
 
         empty_child1 = partial_qnode1.get_endmost_child_with_label(Label.EMPTY)
@@ -362,7 +364,7 @@ class PQtree(object):
             print("[Template_P6] 3) result = False node: " + str(node.id))
             return False
 
-        partial_qnode2 = node.partial_children[1]
+        partial_qnode2 = node.partial_children.nodeat(1).value
         assert partial_qnode2.node_type == Type.Q_NODE
 
         empty_child2 = partial_qnode2.get_endmost_child_with_label(Label.EMPTY)
@@ -375,9 +377,9 @@ class PQtree(object):
             # TODO: update direction indicator here
             # Only one full child, no need to create new P-node
             if len(node.full_children) == 1:
-                full_node = node.full_children[0]
-                node.full_children = []
-                node.circular_link.remove(full_node)
+                full_node = node.full_children.nodeat(0).value
+                node.full_children = dllist
+                node.circular_link.remove(full_node.circular_list_node)
             else:
                 full_node = PQnode()
                 full_node.node_type = Type.P_NODE
@@ -429,18 +431,18 @@ class PQtree(object):
         full_child2.mark_full()
 
         # Remove partial_qnode2
-        node.circular_link.remove(partial_qnode2)
+        node.circular_link.remove(partial_qnode2.circular_list_node)
         partial_qnode2.full_reset_node()
 
         # Since node could be only root, no need to update direction indicator
         if len(node.circular_link) == 1:
             if node.parent is None:
                 if self.root == node:
-                    self.root = node.circular_link[0]
-                node.circular_link[0].parent = None
+                    self.root = node.circular_link.nodeat(0).value
+                node.circular_link.nodeat(0).value.parent = None
                 node.full_reset_node()
             else:
-                new_node = node.circular_link[0]
+                new_node = node.circular_link.nodeat(0).value
                 node.parent.replace_child(node, new_node)
                 new_node.parent = node.parent
                 new_node.mark_partial()
@@ -528,7 +530,7 @@ class PQtree(object):
 
         # If partial Q-node exists, move all children from it
         if has_partial_child and should_process:
-            partial_node = node.partial_children[0]
+            partial_node = node.partial_children.nodeat(0).value
 
             # Merge both corners
             for i in range(2):
@@ -565,7 +567,7 @@ class PQtree(object):
                     indicator = partial_child.get_indicator(None)
                     indicator.replace_node_for_indicator(None, sibling_of_partial)
 
-            node.partial_children.remove(partial_node)
+            node.partial_children.remove(partial_node.partial_list_node)
             partial_node.parent = None
 
         node.mark_partial()
@@ -597,7 +599,7 @@ class PQtree(object):
             node.full_children.extend(partial_node.full_children)
             partial_node.full_reset_node()
 
-        node.partial_children = []
+        node.partial_children = dllist()
 
         node.mark_partial()
 
@@ -804,8 +806,6 @@ def __reduce(tree, subset):
         if node.pertinent_leaf_count < subset_len:
             node_parent = node.parent
 
-            if node_parent is None:
-                print("FAIL")
             node_parent.pertinent_leaf_count += node.pertinent_leaf_count
             node_parent.pertinent_child_count -= 1
 
