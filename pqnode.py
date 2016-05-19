@@ -61,6 +61,7 @@ class DirectionIndicator(object):
         self.data = data
         self.id = DirectionIndicator.id_counter
         DirectionIndicator.id_counter += 1
+        print("INDICATOR CREATED WITH ID = " + str(self.id))
         DirectionIndicator.list_of_instances.append(self)
         # print("Direction indicator #" + str(self.id) + " is created")
         self.prev_node = None
@@ -118,6 +119,14 @@ class DirectionIndicator(object):
         if self.next_node == node2 and self.prev_node == node1:
             return True
         return False
+
+    def clear_nodes(self):
+        if self.next_node:
+            self.next_node.prev_indicator = None
+            self.next_node = None
+        if self.prev_node:
+            self.prev_node.next_indicator = None
+            self.prev_node = None
 
     def __str__(self):
         return str(self.data)
@@ -302,8 +311,10 @@ class PQnode(object):
             adjacency_list.append(full_child)
             if full_child.next_indicator:
                 adjacency_list.append("|" + str(full_child.next_indicator) + ">")
+                full_child.next_indicator.clear_nodes()
             elif full_child.prev_indicator:
                 adjacency_list.append("<" + str(full_child.prev_indicator) + "|")
+                full_child.prev_indicator.clear_nodes()
             return adjacency_list
 
         # Only need to update pointers for first and last full children
@@ -353,6 +364,9 @@ class PQnode(object):
                     print("Repeated indicator 2")
             adjacency_list.extend(actual_child.collect_full_leaves())
 
+        for indicator in found_direction_indicators:
+            indicator.clear_nodes()
+
         direction_indicator = DirectionIndicator(str(iteration))
 
         sibling1 = endmost_full_children[0].get_sibling_with_label(Label.EMPTY)
@@ -390,8 +404,8 @@ class PQnode(object):
                 return adjacency_list
             self.replace_qnode(self.endmost_children[0])
 
-        if not self.is_valid_qnode():
-            self.update_to_pnode()
+        # if not self.is_valid_qnode():
+        #    self.update_to_pnode()
 
         return adjacency_list
 
@@ -666,4 +680,5 @@ class PQnode(object):
             if self.next_indicator.has_nodes(self, other_node):
                 return self.prev_indicator
         return None
+
 

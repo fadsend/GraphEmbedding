@@ -1,5 +1,6 @@
 from llist import dllist
 
+
 class MyQueue(object):
 
     def __init__(self, data=None):
