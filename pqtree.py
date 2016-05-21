@@ -583,29 +583,29 @@ class PQtree(object):
             print("[Template_Q3] 1) result = False node: " + str(node.id))
             return False
 
-        # # Updating direction indicator, i guess it could be re-written
-        # for tmp_node in node.partial_children:
-        #     # Check if the node is endmost, in this case skip update for direction
-        #     # indicator on empty side
-        #     if tmp_node.count_siblings() == 2:
-        #         # Updating indicator for empty part of partial node
-        #         empty_child = tmp_node.get_endmost_child_with_label(Label.EMPTY)
-        #         empty_sibling = tmp_node.get_sibling_with_label(Label.EMPTY)
-        #         tmp_node.replace_direction_indicator(empty_child, Label.EMPTY)
-        #         if empty_child.has_indicator(None):
-        #             indicator = empty_child.get_indicator(None)
-        #             indicator.replace_node_for_indicator(None, empty_sibling)
-        #
-        #     # Updating direction indicators for full part
-        #     # tmp_node is an endmost child, so skip empty part
-        #     full_child = tmp_node.get_endmost_child_with_label(Label.FULL)
-        #     full_sibling = tmp_node.get_sibling_with_label(Label.FULL)
-        #     # At first replace direction indicator-sibling if tmp_node
-        #     tmp_node.replace_direction_indicator(full_child, Label.FULL)
-        #     # Then update indicator which is sibling of tmp_node's child
-        #     if full_child.has_indicator(None):
-        #         indicator = full_child.get_indicator(None)
-        #         indicator.replace_node_for_indicator(None, full_sibling)
+        # Updating direction indicator, i guess it could be re-written
+        for tmp_node in node.partial_children:
+            # Check if the node is endmost, in this case skip update for direction
+            # indicator on empty side
+            if tmp_node.count_siblings() == 2:
+                # Updating indicator for empty part of partial node
+                empty_child = tmp_node.get_endmost_child_with_label(Label.EMPTY)
+                empty_sibling = tmp_node.get_sibling_with_label(Label.EMPTY)
+                tmp_node.replace_direction_indicator(empty_child, Label.EMPTY)
+                if empty_child.has_indicator(None):
+                    indicator = empty_child.get_indicator(None)
+                    indicator.replace_node_for_indicator(None, empty_sibling)
+
+            # Updating direction indicators for full part
+            # tmp_node is an endmost child, so skip empty part
+            full_child = tmp_node.get_endmost_child_with_label(Label.FULL)
+            full_sibling = tmp_node.get_sibling_with_label(Label.FULL)
+            # At first replace direction indicator-sibling if tmp_node
+            tmp_node.replace_direction_indicator(full_child, Label.FULL)
+            # Then update indicator which is sibling of tmp_node's child
+            if full_child.has_indicator(None):
+                indicator = full_child.get_indicator(None)
+                indicator.replace_node_for_indicator(None, full_sibling)
 
         # TODO: add direction indicator here
         for partial_node in node.partial_children:

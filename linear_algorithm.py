@@ -47,6 +47,8 @@ def upward_embed(graph):
             graph.new_adj_list[iteration].append(vertex)
 
     print(graph.new_adj_list)
+    #graph.new_adj_list[6] = [3, 4]
+    #graph.new_adj_list[9] = [6, 5]
     graph.new_adj_list = correct_direction(graph.new_adj_list, n)
     print(graph.new_adj_list)
     return True
@@ -65,7 +67,18 @@ def correct_direction(adj_list, n):
                     assert False
 
                 tmp_id = int(adj_list[i][j][1:-1])
+                # should_revers = False
                 if should_revers:
+                    if len(adj_list[tmp_id]) % 2 == 1:
+                        p = len(adj_list[tmp_id]) // 2
+                        if type(adj_list[tmp_id][p]) == str:
+                            if adj_list[tmp_id][p][0] == "|":
+                                adj_list[tmp_id][p] = "< " + adj_list[tmp_id][p][1] + "|"
+                            elif adj_list[tmp_id][p][0] == "<":
+                                adj_list[tmp_id][p] = "|" + adj_list[tmp_id][p][1] + ">"
+                            else:
+                                assert False
+
                     for k in range(len(adj_list[tmp_id]) // 2):
                         idx1 = k
                         idx2 = len(adj_list[tmp_id]) - 1 - k
