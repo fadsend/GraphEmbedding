@@ -202,13 +202,21 @@ class PQnode(object):
         if self.data is not None:
             self.data.node_reference = self
         else:
-            print("New node is created: id = " + str(self.id))
+            pass
+        print("New node is created: id = " + str(self.id) + " " + str(self.data))
 
         # Aux references for lists of its parent
         self.full_list_node = None
         self.circular_list_node = None
         self.queue_list_node = None
         self.partial_list_node = None
+
+    def count_children(self):
+        assert self.node_type != Type.Q_NODE
+        if self.node_type == Type.LEAF:
+            return 1
+        else:
+            return len(self.circular_link)
 
     def get_num_siblings(self):
         count = 0
@@ -329,7 +337,7 @@ class PQnode(object):
                     full_child.prev_indicator.clear_nodes()
             return adjacency_list
 
-        # Only need to update pointers for first and last full children
+        # Gets start and end position of full children in the list of Q-node children.
         for full_child in self.full_children:
             for i in range(2):
                 if full_child.immediate_sublings[i] is None:
@@ -344,162 +352,101 @@ class PQnode(object):
                 # need to proceed
                 break
 
+        # Should always has at least 2 full_children at this point
+        # Case with 1 child performed above
         assert len(endmost_full_children) == 2
 
         found_direction_indicators = []
         adjacency_list = []
-        count = 0
+        # count = 0
         # Iterate from one endmost full child to another since order of self.full_children
         # could differ from actual one. It's a bit re-written version of QnodeIterator
         prev_child = endmost_full_children[0].get_sibling_with_label(Label.EMPTY)
         full_child = endmost_full_children[0]
+
+        # At first check full_child for indicator
+        if full_child.next_indicator and full_child.next_indicator.next_node == prev_child:
+            adjacency_list.append("<" + str(full_child.next_indicator) + "|")
+            found_direction_indicators.append(full_child.next_indicator)
+        if full_child.prev_indicator and full_child.prev_indicator.prev_node == prev_child:
+            adjacency_list.append("|" + str(full_child.prev_indicator) + ">")
+            found_direction_indicators.append(full_child.prev_indicator)
+
         while True:
             if full_child is None or full_child.label != Label.FULL:
                 break
             actual_child = full_child
+            prev_actual_child = prev_child
             next_child = full_child.immediate_sublings[0]
             if next_child == prev_child:
                 next_child = full_child.immediate_sublings[1]
             prev_child = full_child
             full_child = next_child
-            # # Check if direction indicator is present and add it to a list if it is
-            # if actual_child.prev_indicator:
-            #     # Prev indicator will be added only at first or last iteration
-            #     # Check iteration
-            #     indicator = actual_child.prev_indicator
-            #     if int(indicator.data) == actual_child.data.data.get_lower():
-            #         if count == 0:
-            #             # We at the first iteration, so prev in a right direction
-            #             # Check just in case
-            #             if actual_child.prev_indicator not in found_direction_indicators:
-            #                 found_direction_indicators.append(actual_child.prev_indicator)
-            #                 adjacency_list.append("|" + str(actual_child.prev_indicator) + ">")
-            #             else:
-            #                 print("Indicator again 1")
-            #         else:
-            #             # Last iteration
-            #             if actual_child.prev_indicator not in found_direction_indicators:
-            #                 found_direction_indicators.append(actual_child.prev_indicator)
-            #                 adjacency_list.append("<" + str(actual_child.prev_indicator) + "|")
-            #             else:
-            #                 print("Indicator again 2")
-            #     else:
-            #         print("Indicator differs from lower edge value, will be processes later")
-            # if actual_child.next_indicator:
-            #     # In case of next indicator should check only last one
-            #     indicator = actual_child.next_indicator
-            #     if indicator.next_node is None or indicator.next_node.label != Label.FULL:
-            #         if int(indicator.data) == actual_child.data.data.get_lower():
-            #             if actual_child.next_indicator not in found_direction_indicators:
-            #                 found_direction_indicators.append(actual_child.next_indicator)
-            #                 if count != 0:
-            #                     adjacency_list.append("|" + str(actual_child.next_indicator) + ">")
-            #                 else:
-            #                     adjacency_list.append("<" + str(actual_child.next_indicator) + "|")
-            #             else:
-            #                 print("Repeated indicator 1")
-            #         else:
-            #             print("Indicator will be proceeded later.")
-            #     else:
-            #         if actual_child.next_indicator not in found_direction_indicators:
-            #             found_direction_indicators.append(actual_child.next_indicator)
-            #             adjacency_list.append("|" + str(actual_child.next_indicator) + ">")
-            #         else:
-            #             print("Repeated indicator 2")
-            if actual_child.next_indicator:
-                if actual_child.next_indicator not in found_direction_indicators:
-                    found_direction_indicators.append(actual_child.next_indicator)
-                    adjacency_list.append(actual_child.next_indicator)
-            if actual_child.prev_indicator:
-                if actual_child.prev_indicator not in found_direction_indicators:
-                    found_direction_indicators.append(actual_child.prev_indicator)
-                    adjacency_list.append(actual_child.prev_indicator)
             adjacency_list.extend(actual_child.collect_full_leaves())
+            # Check only next indicators here to avoid duplication
+            if actual_child.next_indicator:
+                if actual_child.next_indicator.next_node == full_child:
+                    if actual_child.next_indicator not in found_direction_indicators:
+                        adjacency_list.append("|" + str(actual_child.next_indicator) + ">")
+                        found_direction_indicators.append(actual_child.next_indicator)
+                elif actual_child.next_indicator.next_node == prev_actual_child:
+                    if actual_child.next_indicator not in found_direction_indicators:
+                        adjacency_list.append("<" + str(actual_child.next_indicator) + "|")
+                        found_direction_indicators.append(actual_child.next_indicator)
 
-        # Process direction indicators along with the nodes
-        # At first, check corner indicators for value
-        # Find nearest node
-        has_some_nodes = True
-        top_index = 0
-        bottom_index = len(adjacency_list) - 1
-        while type(adjacency_list[top_index]) != PQnode:
-            top_index += 1
-            if top_index == len(adjacency_list):
-                has_some_nodes = False
+        # Addition check
+        actual_child = prev_child
+        if actual_child.prev_indicator:
+            if actual_child.prev_indicator.prev_node is None or \
+               actual_child.prev_indicator.prev_node.label != Label.FULL:
+                if actual_child.prev_indicator not in found_direction_indicators:
+                    adjacency_list.append("<" + str(actual_child.prev_indicator) + "|")
+                    found_direction_indicators.append(actual_child.prev_indicator)
 
-        while type(adjacency_list[bottom_index]) != PQnode:
-            bottom_index -= 1
-            if bottom_index == 0:
-                has_some_nodes = False
-
-        assert has_some_nodes
-
-        count = 0
-        while count < top_index:
-            if type(adjacency_list[0]) == DirectionIndicator:
-                if adjacency_list[0].data != adjacency_list[top_index].data.data.get_lower():
-                    adjacency_list.pop(0)
-            count += 1
-
-        count = 0
-        while count > bottom_index:
-            if type(adjacency_list[-1]) == DirectionIndicator:
-                if adjacency_list[-1].data != adjacency_list[top_index].data.data.get_lower():
-                    adjacency_list.pop(-1)
-            count -= 1
-
-        # TODO: check if one more iteration is needed
-        for idx in range(bottom_index, top_index):
-            if type(adjacency_list[idx]) == DirectionIndicator:
-                if adjacency_list[idx].next_node == adjacency_list[idx + 1]:
-                    adjacency_list[idx] = "|" + str(adjacency_list[idx]) + ">"
-                elif adjacency_list[idx].prev_node == adjacency_list[idx + 1]:
-                    adjacency_list[idx] = "<" + str(adjacency_list[idx]) + "|"
-
-        # found_direction_indicators = []
-
-        # for indicator in found_direction_indicators:
-        #     indicator.clear_nodes()
-
-        direction_indicator = DirectionIndicator(str(iteration))
-
-        sibling1 = endmost_full_children[0].get_sibling_with_label(Label.EMPTY)
-        sibling2 = endmost_full_children[1].get_sibling_with_label(Label.EMPTY)
-
-        if sibling1 is None and sibling2 is None:
-            # Q-node consist only of full children
-            self.replace_endmost_child(endmost_full_children[0], new_node)
-            self.replace_endmost_child(endmost_full_children[1], new_node)
-        elif sibling1 is not None and sibling2 is None:
-            sibling1.replace_sibling(endmost_full_children[0], new_node)
-            self.replace_endmost_child(endmost_full_children[1], new_node)
-        elif sibling2 is not None and sibling1 is None:
-            sibling2.replace_sibling(endmost_full_children[1], new_node)
-            self.replace_endmost_child(endmost_full_children[0], new_node)
-        else:
-            # Replace siblings with new node
-            # new_node's siblings are updated there
-            sibling1.replace_sibling(endmost_full_children[0], new_node)
-            sibling2.replace_sibling(endmost_full_children[1], new_node)
-
-        direction_indicator.set_next_for_indicator(new_node)
-        direction_indicator.set_prev_for_indicator(sibling1)
+        for indicator in found_direction_indicators:
+            indicator.clear_nodes()
 
         self.full_children = dllist()
-        # Add new node to the list of full children
-        new_node.parent = self
-        new_node.mark_full()
 
-        # Only one children remain
-        if self.endmost_children[0] == self.endmost_children[1]:
-            # Special case for the last iteration. We could have
-            # Q-node as a root with single empty P-node child
-            if len(self.endmost_children[0].circular_link) == 0:
-                return adjacency_list
-            self.replace_qnode(self.endmost_children[0])
+        if new_node.count_children() >= 0:
+            sibling1 = endmost_full_children[0].get_sibling_with_label(Label.EMPTY)
+            sibling2 = endmost_full_children[1].get_sibling_with_label(Label.EMPTY)
 
-        if not self.is_valid_qnode():
-            self.update_to_pnode()
+            if sibling1 is None and sibling2 is None:
+                # Q-node consist only of full children
+                self.replace_endmost_child(endmost_full_children[0], new_node)
+                self.replace_endmost_child(endmost_full_children[1], new_node)
+            elif sibling1 is not None and sibling2 is None:
+                sibling1.replace_sibling(endmost_full_children[0], new_node)
+                self.replace_endmost_child(endmost_full_children[1], new_node)
+            elif sibling2 is not None and sibling1 is None:
+                sibling2.replace_sibling(endmost_full_children[1], new_node)
+                self.replace_endmost_child(endmost_full_children[0], new_node)
+            else:
+                # Replace siblings with new node
+                # new_node's siblings are updated there
+                sibling1.replace_sibling(endmost_full_children[0], new_node)
+                sibling2.replace_sibling(endmost_full_children[1], new_node)
+
+            if new_node.count_children() > 0:
+                direction_indicator = DirectionIndicator(str(iteration))
+                direction_indicator.set_next_for_indicator(new_node)
+                direction_indicator.set_prev_for_indicator(sibling1)
+
+            # Add new node to the list of full children
+            new_node.parent = self
+            # new_node.mark_full()
+
+            # Only one children remain
+            if self.endmost_children[0] == self.endmost_children[1]:
+                # Special case for the last iteration. We could have
+                # Q-node as a root with single empty P-node child
+                if len(self.endmost_children[0].circular_link) == 0:
+                    return adjacency_list
+                self.replace_qnode(self.endmost_children[0])
+
+            #if not self.is_valid_qnode():
+            #    self.update_to_pnode()
 
         return adjacency_list
 
@@ -727,15 +674,17 @@ class PQnode(object):
             if child.prev_indicator:
                 if child.prev_indicator not in found_direction_indicators:
                     found_direction_indicators.append(child.prev_indicator)
-                    if do_not_stringify:
-                        full_leaves.append(child.prev_indicator)
+                    #if do_not_stringify:
+                    # TODO: check direction here
+                    full_leaves.append("|" + str(child.prev_indicator) + ">")
                 else:
                     print("Repeated indicator 12")
             if child.next_indicator:
                 if child.next_indicator not in found_direction_indicators:
                     found_direction_indicators.append(child.next_indicator)
-                    if do_not_stringify:
-                        full_leaves.append(child.next_indicator)
+                    # if do_not_stringify:
+                    # TODO: check direction here
+                    full_leaves.append("|" + str(child.next_indicator) + ">")
                 else:
                     print("Repeated indicator 22")
             if child.node_type == Type.LEAF:

@@ -31,15 +31,12 @@ class PQtree(object):
         else:
             self.root = None
 
-    # TODO: find a way to handle double reset
     def pre_reset(self):
         self.root.reset()
-        # self.pertinent_root = None
 
     def post_reset(self):
         self.pseudo_node = None
         self.pseudo_siblings = [None, None]
-        # self.root.reset()
 
     # Note: tree must be reduced, and subset must be the same
     # as for reduction
@@ -210,6 +207,7 @@ class PQtree(object):
         empty_child.immediate_sublings[0] = full_child
         full_child.immediate_sublings[0] = empty_child
 
+        new_qnode.mark_partial()
         print("Template 3 exit with True node: " + str(node.id))
 
         return True
@@ -374,7 +372,6 @@ class PQtree(object):
             return False
 
         if len(node.full_children) > 0:
-            # TODO: update direction indicator here
             # Only one full child, no need to create new P-node
             if len(node.full_children) == 1:
                 full_node = node.full_children.nodeat(0).value
@@ -550,7 +547,6 @@ class PQtree(object):
                 else:
                     node.replace_endmost_child(sibling_of_partial, partial_child)
 
-                # TODO: come out with ideas how to handle it
                 partial_node.replace_direction_indicator(partial_child, child.label)
 
                 # Override parent node just in case
@@ -587,14 +583,14 @@ class PQtree(object):
         for tmp_node in node.partial_children:
             # Check if the node is endmost, in this case skip update for direction
             # indicator on empty side
-            if tmp_node.count_siblings() == 2:
-                # Updating indicator for empty part of partial node
-                empty_child = tmp_node.get_endmost_child_with_label(Label.EMPTY)
-                empty_sibling = tmp_node.get_sibling_with_label(Label.EMPTY)
-                tmp_node.replace_direction_indicator(empty_child, Label.EMPTY)
-                if empty_child.has_indicator(None):
-                    indicator = empty_child.get_indicator(None)
-                    indicator.replace_node_for_indicator(None, empty_sibling)
+
+            # Updating indicator for empty part of partial node
+            empty_child = tmp_node.get_endmost_child_with_label(Label.EMPTY)
+            empty_sibling = tmp_node.get_sibling_with_label(Label.EMPTY)
+            tmp_node.replace_direction_indicator(empty_child, Label.EMPTY)
+            if empty_child.has_indicator(None):
+                indicator = empty_child.get_indicator(None)
+                indicator.replace_node_for_indicator(None, empty_sibling)
 
             # Updating direction indicators for full part
             # tmp_node is an endmost child, so skip empty part
@@ -602,12 +598,13 @@ class PQtree(object):
             full_sibling = tmp_node.get_sibling_with_label(Label.FULL)
             # At first replace direction indicator-sibling if tmp_node
             tmp_node.replace_direction_indicator(full_child, Label.FULL)
+            if len(node.full_children) == 0:
+                tmp_node.replace_direction_indicator(full_child, Label.PARTIAL)
             # Then update indicator which is sibling of tmp_node's child
             if full_child.has_indicator(None):
                 indicator = full_child.get_indicator(None)
                 indicator.replace_node_for_indicator(None, full_sibling)
 
-        # TODO: add direction indicator here
         for partial_node in node.partial_children:
             for partial_node_sibling in partial_node.immediate_sublings:
                 if partial_node_sibling is None:
@@ -619,6 +616,7 @@ class PQtree(object):
                     partial_node_child = partial_node.get_endmost_child_with_label(partial_node_sibling.label)
                     if partial_node_child is None:
                         partial_node_child = partial_node.get_endmost_child_with_label(Label.FULL)
+                    partial_node_child.parent = node
                     partial_node_sibling.replace_sibling(partial_node, partial_node_child)
 
             node.full_children.extend(partial_node.full_children)
@@ -766,13 +764,6 @@ def __bubble(tree, subset):
             BLOCKED_NODES += 1
             blocked_nodes.append(node)
 
-        # If it is the last node in the queue
-        # if QUEUE.size() == 0:
-            # tree.pertinent_root = node
-
-    print("BLOCK_COUNT = " + str(BLOCK_COUNT))
-    print("OFF_THE_TOP = " + str(OFF_THE_TOP))
-    print("BLOCKED_NODES = " + str(BLOCKED_NODES))
     if BLOCK_COUNT > 1 or (OFF_THE_TOP == 1 and BLOCK_COUNT != 0):
         return PQtree([])
 
@@ -802,10 +793,6 @@ def __bubble(tree, subset):
                         count += 1
                         pseudo_node.add_endmost_child(blocked_node)
                         break
-
-        # If pseudo_node has been created, than
-        # pertinent root is equal to root of the tree
-        # tree.pertinent_root = tree.root
 
         tree.pseudo_node = pseudo_node
 
