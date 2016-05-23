@@ -6,10 +6,11 @@ import copy
 
 def upward_embed(graph):
     graph.compute_st_numbering()
-    universe = graph.get_edges_lower(1)
+    start_idx = list(graph.adj_list.keys())[0]
+    universe = graph.get_edges_lower(start_idx)
     n = graph.get_num_of_vertices()
     tree = PQtree(universe)
-    for iteration in range(2, n + 1):
+    for iteration in range(start_idx + 1, n + 1):
         subset = graph.get_edges_higher(iteration)
         # if len(subset) == 0:
         #    continue

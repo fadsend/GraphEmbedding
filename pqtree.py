@@ -424,8 +424,10 @@ class PQtree(object):
         partial_qnode1.replace_endmost_child(full_child1, empty_child2)
         empty_child2.parent = partial_qnode1
 
-        full_child2.parent = partial_qnode1
-        full_child2.mark_full()
+        partial_qnode2.move_full_children(partial_qnode1)
+
+        # full_child2.parent = partial_qnode1
+        # full_child2.mark_full()
 
         # Remove partial_qnode2
         node.circular_link.remove(partial_qnode2.circular_list_node)

@@ -76,15 +76,15 @@ class Graph(object):
         tmp_vertices = []
         for edge in list_of_edges:
             for i in range(2):
-                if edge[i] not in tmp_vertices:
+                if edge.vertices[i] not in tmp_vertices:
                     self.num_of_vertices += 1
-                    self.adj_list[edge[i]] = []
-                    self.new_adj_list[edge[i]] = []
-                    tmp_vertices.append(edge[i])
+                    self.adj_list[edge.vertices[i]] = []
+                    self.new_adj_list[edge.vertices[i]] = []
+                    tmp_vertices.append(edge.vertices[i])
 
-            self.edges_list.append(Data(UndirectedEdge(edge[0], edge[1])))
-            self.adj_list[edge[0]].append(edge[1])
-            self.adj_list[edge[1]].append(edge[0])
+            self.edges_list.append(Data(UndirectedEdge(edge.vertices[0], edge.vertices[1])))
+            self.adj_list[edge.vertices[0]].append(edge.vertices[1])
+            self.adj_list[edge.vertices[1]].append(edge.vertices[0])
 
     def construct_graph_from_adj_list(self, adj_list: dict):
         for i in adj_list.keys():
@@ -126,67 +126,68 @@ class Graph(object):
                 edges.append(edge)
         return edges
 
+    def has_edge(self, v, k):
+        return v in self.adj_list.keys() and k in self.adj_list[v]
+
     def get_num_of_vertices(self):
         return self.num_of_vertices
 
     def find_cycle(self):
-        max_cycle = []
+        cycle = []
+        marks = {i: 0 for i in self.adj_list.keys()}
 
-        def dfs_visit(start):
-            stack = []
-            path = []
-            marks = {i: False for i in self.adj_list.keys()}
-            stack.append(start)
+        def dfs_cycle(c, m, p, v):
+            m[v] = 1
+            for k in self.adj_list[v]:
+                if k == p:
+                    continue
+                if not m[k]:
+                    c.append((v, k))
+                    if dfs_cycle(c, m, v, k):
+                        return True
+                    else:
+                        c.pop()
+                if m[k] == 1:
+                    c.append((v, k))
+                    tmp_c = []
+                    for n in c:
+                        if n[0] == k:
+                            tmp_c.extend(c[n[0]:])
+                            c = tmp_c[:]
+                            return True
+                    return True
+            m[v] = 2
+            return False
 
-            while len(stack) > 0:
-                v = stack.pop()
-                if not marks[v]:
-                    path.append(v)
-                    marks[v] = True
-                    for adj_v in self.get_adjacent_vertices(v):
-                        stack.append(adj_v)
-                else:
-                    # Check for backward edges
-                    if len(path) >= 2 and path[-2] == v:
-                        continue
-                    path.append(v)
-                    # Remove excess vertices from path
-                    return path[path.index(v):]
+        if not dfs_cycle(cycle, marks, -1, list(self.adj_list.keys())[0]):
             return []
-
-        # TODO: not sure it worth to check every vertex for cycle
-        # or just stop when the first one is found
-        # It seems that for every vertex dfs would return the same
-        # cycle in most cases
-        for i in self.adj_list.keys():
-            cycle = dfs_visit(i)
-            print(cycle)
-            if len(cycle) > len(max_cycle):
-                max_cycle = cycle
-        return max_cycle[:-1]
+        else:
+            result = []
+            for e in cycle:
+                result.append(e[0])
+            return result
 
     def get_adjacent_vertices(self, vertex):
         return self.adj_list[vertex]
 
-    # TODO: use dict with True/False in vertex in cycle
-    def get_segments(self, cycle):
+    def get_segments(self, cycle, neighbors):
         segments = []
 
-        # Collect neighbours for the vertices in the cycle to
-        # distinguish edges between them with one-edge segments
-        neighbors = {}
-        for i in range(1, len(cycle) - 1):
-            neighbors[cycle[i]] = (cycle[i - 1], cycle[i + 1])
-        neighbors[cycle[0]] = (cycle[1], cycle[-1])
-        neighbors[cycle[-1]] = (cycle[-2], cycle[0])
+        cycle_list = {i: False for i in self.adj_list.keys()}
+        for i in cycle:
+            cycle_list[i] = True
 
+        already_processed = {i : False for i in self.adj_list.keys()}
         # Search for single-edge segments
         for v in cycle:
             for n in self.adj_list[v]:
-                if n not in neighbors[v] and n in cycle:
+                if already_processed[n]:
+                    continue
+                if not neighbors[v][n] and cycle_list[n]:
                     seg = Graph()
                     seg.construct_graph_from_list([Edge(v, n)])
                     segments.append(seg)
+                    already_processed[v] = True
 
         def dfs_segment(start, dfs_marks, graph_cycle, segment):
             stack = [start]
@@ -196,7 +197,7 @@ class Graph(object):
                 if not dfs_marks[vertex]:
                     dfs_marks[vertex] = True
                     for adj_vertex in self.adj_list[vertex]:
-                        if not(vertex in graph_cycle and adj_vertex in neighbors[vertex]):
+                        if not(vertex in graph_cycle and neighbors[vertex][adj_vertex]):
                             segment.add_edge(Edge(vertex, adj_vertex))
                         if adj_vertex not in graph_cycle:
                             stack.append(adj_vertex)
@@ -209,16 +210,59 @@ class Graph(object):
             if not marks[v]:
                 seg = Graph()
                 dfs_segment(v, marks, cycle, seg)
-                segments.append(seg)
+                if seg.get_num_of_vertices() != 0:
+                    segments.append(seg)
 
         return segments
 
-    def embedded_on_face(self, face, segment):
-        raise NotImplementedError()
+    def dfs_chain(self, marks, partial_embedding, chain, v):
+        marks[v] = True
+        chain.append(v)
+        if len(chain) > 5:
+            print("12")
+        count_marks = 0
+        for adj_v in self.adj_list[v]:
+            if not marks[adj_v]:
+                if adj_v not in partial_embedding:
+                    if self.dfs_chain(marks, partial_embedding, chain, adj_v):
+                        continue
+                else:
+                    chain.append(adj_v)
+                return
+            else:
+                count_marks += 1
+                if count_marks == len(self.adj_list[v]):
+                    for t in self.adj_list[v]:
+                        if t in partial_embedding:
+                            return
+                    chain.pop()
+                    return True
+
+
+    def get_chain(self, partial_embedding):
+        chain = []
+        marks = {i: False for i in self.adj_list.keys()}
+        for v in self.adj_list.keys():
+            if v in partial_embedding:
+                if len(self.adj_list[v]) != 0:
+                    self.dfs_chain(marks, partial_embedding, chain, v)
+                    break
+
+        print(chain)
+        return chain
+
+    # TODO: understand
+    def face_has_segment(self, face, segment, partial_embedding):
+        for v in self.adj_list.keys():
+            for k in self.adj_list[v]:
+                if segment.has_edge(v, k):
+                    if v in partial_embedding and v not in face or \
+                       k in partial_embedding and k not in face:
+                        return False
+        return True
 
     def compute_st_numbering(self):
         return None
-  #      raise NotImplementedError()
 
     def __str__(self):
         tmp_str = ""

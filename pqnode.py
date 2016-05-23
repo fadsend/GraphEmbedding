@@ -153,6 +153,9 @@ class PQnode(object):
         self.id = PQnode.id_counter
         PQnode.id_counter += 1
 
+        if self.id == 91:
+            print("tmp")
+
         # Linked list of node's children. Used only by P-node.
         self.circular_link = dllist()
 
@@ -236,8 +239,9 @@ class PQnode(object):
 
     def move_full_children(self, new_node):
         for full_child in self.full_children:
-            self.circular_link.remove(full_child.circular_list_node)
-            full_child.circular_list_node = new_node.circular_link.append(full_child)
+            if self.node_type != Type.Q_NODE:
+                self.circular_link.remove(full_child.circular_list_node)
+                full_child.circular_list_node = new_node.circular_link.append(full_child)
             full_child.parent = new_node
             full_child.full_list_node = new_node.full_children.append(full_child)
 
@@ -354,6 +358,8 @@ class PQnode(object):
 
         # Should always has at least 2 full_children at this point
         # Case with 1 child performed above
+        if len(endmost_full_children) != 2:
+            print("tmp")
         assert len(endmost_full_children) == 2
 
         found_direction_indicators = []
