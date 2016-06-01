@@ -55,15 +55,36 @@ def main():
     graphs_lists = [
         planar_6,
         planar_10,
-        planar_20
+        planar_20,
+        # random_25,
+        # random_50,
+        # random_100
     ]
+
+    count_edges = []
+    count = 0
+
+    for gr in graphs_lists:
+        count_edges.append(0)
+        for v in gr.keys():
+            count_edges[count] += len(gr[v])
+        count_edges[count] /= 2
+        count += 1
+
+    num_of_vertices = [len(t.keys()) for t in graphs_lists]
+
 
     test_result = {}
 
     run = {
-        "linear": False,
+        "linear": True,
         "gamma": True,
-        "retries": 1
+        "retries": 10
+    }
+
+    results = {
+        "linear": [],
+        "gamma": []
     }
 
     if run["linear"]:
@@ -90,14 +111,14 @@ def main():
             test_result[i] = time_list[:]
 
         print("##########Result############")
-        final_results = [0, 0, 0]
-        for j in range(3):
+        final_results = [0] * len(graphs_lists)
+        for j in range(len(graphs_lists)):
             for i in range(run_count):
                 final_results[j] += test_result[i][j]
-        for i in range(3):
+        for i in range(len(graphs_lists)):
             final_results[i] /= run_count
 
-        print(final_results)
+        results["linear"] = final_results
 
     if run["gamma"]:
         run_count = run["retries"]
@@ -123,16 +144,21 @@ def main():
             test_result[i] = time_list[:]
 
         print("##########GAMMA Result############")
-        final_results = [0, 0, 0]
-        for j in range(3):
+        final_results = [0] * len(graphs_lists)
+        for j in range(len(graphs_lists)):
             for i in range(run_count):
                 final_results[j] += test_result[i][j]
-        for i in range(3):
+        for i in range(len(graphs_lists)):
             final_results[i] /= run_count
 
-        print(final_results)
+        results["gamma"] = final_results
 
-
+    print("##########RESULTS##############")
+    print("NUM OF VERTICES: " + str(num_of_vertices))
+    print("NUM OF EDGES: " + str(count_edges))
+    print("LINEAR: " + str(results["linear"]))
+    print("GAMMA: " + str(results["gamma"]))
+    print("###############################")
     return 0
 
 

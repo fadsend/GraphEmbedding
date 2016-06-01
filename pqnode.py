@@ -153,9 +153,6 @@ class PQnode(object):
         self.id = PQnode.id_counter
         PQnode.id_counter += 1
 
-        if self.id == 91:
-            print("tmp")
-
         # Linked list of node's children. Used only by P-node.
         self.circular_link = dllist()
 
@@ -206,7 +203,7 @@ class PQnode(object):
             self.data.node_reference = self
         else:
             pass
-        print("New node is created: id = " + str(self.id) + " " + str(self.data))
+        # print("New node is created: id = " + str(self.id) + " " + str(self.data))
 
         # Aux references for lists of its parent
         self.full_list_node = None
@@ -260,6 +257,8 @@ class PQnode(object):
         assert self.node_type != Type.LEAF
 
         if self.node_type == Type.P_NODE:
+            if old_child.circular_list_node is None:
+                print("123")
             self.circular_link.remove(old_child.circular_list_node)
             new_child.circular_list_node = self.circular_link.append(new_child)
         else:
@@ -358,8 +357,6 @@ class PQnode(object):
 
         # Should always has at least 2 full_children at this point
         # Case with 1 child performed above
-        if len(endmost_full_children) != 2:
-            print("tmp")
         assert len(endmost_full_children) == 2
 
         found_direction_indicators = []
@@ -671,7 +668,9 @@ class PQnode(object):
         return True
 
     def collect_full_leaves(self, do_not_stringify=False):
-        assert self.label == Label.FULL
+        # assert self.label == Label.FULL or self.label == Label.PARTIAL
+        if self.label == Label.EMPTY:
+            return []
         if self.node_type == Type.LEAF:
             return [self]
         full_leaves = []

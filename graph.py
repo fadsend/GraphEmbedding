@@ -15,6 +15,10 @@ class Edge(object):
     def __str__(self):
         return "(" + str(self.vertices[0]) + ", " + str(self.vertices[1]) + ")"
 
+    def __eq__(self, other):
+        return self.vertices[0] == other.vertices[0] and self.vertices[1] == other.vertices[1] or \
+               self.vertices[0] == other.vertices[1] and self.vertices[1] == other.vertices[0]
+
 
 class UndirectedEdge(Edge):
 
@@ -263,6 +267,9 @@ class Graph(object):
 
     def compute_st_numbering(self):
         return None
+
+    def get_edges(self):
+        return self.edges_list
 
     def __str__(self):
         tmp_str = ""

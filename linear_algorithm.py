@@ -12,15 +12,15 @@ def upward_embed(graph):
     tree = PQtree(universe)
     for iteration in range(start_idx + 1, n + 1):
         subset = graph.get_edges_higher(iteration)
-        # if len(subset) == 0:
-        #    continue
+        if len(subset) == 0:
+            continue
         try:
             tree = reduce_tree(tree, subset)
         except ReductionFailed:
             return False
         tmp_list = DirectionIndicator.list_of_instances
 
-        print([str(i) for i in tmp_list])
+        #print([str(i) for i in tmp_list])
 
         subset1 = graph.get_edges_lower(iteration)
 
@@ -28,16 +28,16 @@ def upward_embed(graph):
         pertinent_root = tree.get_pertinent_root(subset)
         assert pertinent_root is not None
 
-        print("---------------END of reduction --------------")
-        print(tree)
+        #print("---------------END of reduction --------------")
+        #print(tree)
         if pertinent_root.node_type == Type.Q_NODE:
-            print("Replacing Q-node")
+            #print("Replacing Q-node")
             adj_list = tree.replace_full_children(pertinent_root, PQtree(subset1, True).get_root(), iteration)
         else:
-            print("Replacing P-node")
+            #print("Replacing P-node")
             adj_list = tree.replace_node(pertinent_root, PQtree(subset1, True).get_root())
 
-        print(tree)
+        #print(tree)
         tmp123 = []
         for tmp in adj_list:
             if type(tmp) == str:
@@ -47,11 +47,11 @@ def upward_embed(graph):
         for vertex in tmp123:
             graph.new_adj_list[iteration].append(vertex)
 
-    print(graph.new_adj_list)
+    #print(graph.new_adj_list)
     #graph.new_adj_list[6] = [3, 4]
     #graph.new_adj_list[9] = [6, 5]
     graph.new_adj_list = correct_direction(graph.new_adj_list, n)
-    print(graph.new_adj_list)
+    #print(graph.new_adj_list)
     return True
 
 

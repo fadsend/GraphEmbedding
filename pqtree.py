@@ -124,7 +124,7 @@ class PQtree(object):
             node.mark_full()
             return True
 
-        print("[Template_L1] result = False, node: " + str(node.id))
+        # print("[Template_L1] result = False, node: " + str(node.id))
         return False
 
     # Template P1
@@ -135,20 +135,20 @@ class PQtree(object):
     def template_p1(node: PQnode, is_root: bool) -> bool:
 
         if node.node_type != Type.P_NODE or len(node.full_children) != len(node.circular_link):
-            print("[Template_P1] result = " + str(False) + " node: " + str(node.id))
+            # print("[Template_P1] result = " + str(False) + " node: " + str(node.id))
             return False
 
         node.label = Label.FULL
         # TODO: get rid of "in" operator
         if not is_root and node not in node.parent.full_children:
             node.full_list_node = node.parent.full_children.append(node)
-        print("[Template_P1] result = True node: " + str(node.id))
+        # print("[Template_P1] result = True node: " + str(node.id))
         return True
 
     @staticmethod
     def template_p2(node: PQnode) -> bool:
         if node.node_type != Type.P_NODE or len(node.partial_children) > 0:
-            print("[Template_P2] result = " + str(False) + " node: " + str(node.id))
+            # print("[Template_P2] result = " + str(False) + " node: " + str(node.id))
             return False
 
         # TODO: update direction indicators here
@@ -162,13 +162,13 @@ class PQtree(object):
 
         node.mark_partial()
 
-        print("P2 = True node: " + str(node.id))
+        # print("P2 = True node: " + str(node.id))
         return True
 
     @staticmethod
     def template_p3(node: PQnode) -> bool:
         if node.node_type != Type.P_NODE or len(node.partial_children) > 0:
-            print("[Template_P3] result = " + str(False) + " node: " + str(node.id))
+            # print("[Template_P3] result = " + str(False) + " node: " + str(node.id))
             return False
 
         new_qnode = PQnode()
@@ -208,14 +208,14 @@ class PQtree(object):
         full_child.immediate_sublings[0] = empty_child
 
         new_qnode.mark_partial()
-        print("Template 3 exit with True node: " + str(node.id))
+        # print("Template 3 exit with True node: " + str(node.id))
 
         return True
 
     def template_p4(self, node: PQnode) -> bool:
         if node.node_type != Type.P_NODE or \
            len(node.partial_children) != 1:
-            print("[Template_P4] 1) result = False node: " + str(node.id))
+            # print("[Template_P4] 1) result = False node: " + str(node.id))
             return False
 
         # Should be Q-node
@@ -224,7 +224,7 @@ class PQtree(object):
         full_child = partial_child.get_endmost_child_with_label(Label.FULL)
 
         if not empty_child or not full_child:
-            print("[Template_P4] 2) result = False node: " + str(node.id))
+            # print("[Template_P4] 2) result = False node: " + str(node.id))
             return False
 
         if len(node.full_children) > 0:
@@ -263,17 +263,17 @@ class PQtree(object):
                 node.parent.replace_partial_child(node, node.circular_link[0])
             node.full_reset_node()
 
-        print("[Template_P4] 3) result True node: " + str(node.id))
+        # print("[Template_P4] 3) result True node: " + str(node.id))
         return True
 
     @staticmethod
     def template_p5(node: PQnode) -> bool:
         if node.node_type != Type.P_NODE:
-            print("[Template_P5] 1) result = False node: " + str(node.id))
+            # print("[Template_P5] 1) result = False node: " + str(node.id))
             return False
 
         if len(node.partial_children) != 1:
-            print("[Template_P5] 2) result = False node: " + str(node.id))
+            # print("[Template_P5] 2) result = False node: " + str(node.id))
             return False
 
         node_parent = node.parent
@@ -285,7 +285,7 @@ class PQtree(object):
         empty_child = partial_node.get_endmost_child_with_label(Label.EMPTY)
         full_child = partial_node.get_endmost_child_with_label(Label.FULL)
         if not empty_child or not full_child:
-            print("[Template_P5] 3) result = False node: " + str(node.id))
+            # print("[Template_P5] 3) result = False node: " + str(node.id))
             return False
 
         # Combine full nodes and move them
@@ -341,16 +341,16 @@ class PQtree(object):
                 indicator = empty_child.get_indicator(None)
                 indicator.replace_node_for_indicator(None, empty_node)
 
-        print("[Template_P5] 4) result = True node: " + str(node.id))
+        # print("[Template_P5] 4) result = True node: " + str(node.id))
         return True
 
     def template_p6(self, node: PQnode) -> bool:
         if node.node_type != Type.P_NODE:
-            print("[Template_P6] 1) result = False node: " + str(node.id))
+            # print("[Template_P6] 1) result = False node: " + str(node.id))
             return False
 
         if len(node.partial_children) != 2:
-            print("[Template_P6] 2) result = False node: " + str(node.id))
+            # print("[Template_P6] 2) result = False node: " + str(node.id))
             return False
 
         partial_qnode1 = node.partial_children.nodeat(0).value
@@ -359,7 +359,7 @@ class PQtree(object):
         empty_child1 = partial_qnode1.get_endmost_child_with_label(Label.EMPTY)
         full_child1 = partial_qnode1.get_endmost_child_with_label(Label.FULL)
         if not empty_child1 or not full_child1:
-            print("[Template_P6] 3) result = False node: " + str(node.id))
+            # print("[Template_P6] 3) result = False node: " + str(node.id))
             return False
 
         partial_qnode2 = node.partial_children.nodeat(1).value
@@ -368,7 +368,7 @@ class PQtree(object):
         empty_child2 = partial_qnode2.get_endmost_child_with_label(Label.EMPTY)
         full_child2 = partial_qnode2.get_endmost_child_with_label(Label.FULL)
         if not empty_child2 or not full_child2:
-            print("[Template_P6] 4) result = False node: " + str(node.id))
+            # print("[Template_P6] 4) result = False node: " + str(node.id))
             return False
 
         if len(node.full_children) > 0:
@@ -446,22 +446,22 @@ class PQtree(object):
                 new_node.parent = node.parent
                 new_node.mark_partial()
 
-        print("[Template_P6] 2) result = True node: " + str(node.id))
+        #print("[Template_P6] 2) result = True node: " + str(node.id))
         return True
 
     @staticmethod
     def template_q1(node: PQnode) -> bool:
         if node.node_type != Type.Q_NODE:
-            print("[Template_Q1] result = " + str(False) + " node: " + str(node.id))
+            #print("[Template_Q1] result = " + str(False) + " node: " + str(node.id))
             return False
 
         for child in node.iter_children():
             if child.label != Label.FULL:
-                print("[Template_Q1] result = " + str(False) + " node: " + str(node.id))
+                #print("[Template_Q1] result = " + str(False) + " node: " + str(node.id))
                 return False
 
         node.mark_full()
-        print("[Template_Q1] result = " + str(True) + " node: " + str(node.id))
+        #print("[Template_Q1] result = " + str(True) + " node: " + str(node.id))
         return True
 
     @staticmethod
@@ -471,18 +471,18 @@ class PQtree(object):
            len(node.partial_children) > 1 or \
            node.is_pseudo_node or \
            not node.full_or_partial_children_are_consecutive():
-            print("[Template_Q2] 1) result = False node: " + str(node.id))
+            #print("[Template_Q2] 1) result = False node: " + str(node.id))
             return False
 
         has_partial_child = len(node.partial_children) >= 1
         has_full_child = len(node.full_children) >= 1
 
         if has_full_child and not node.get_endmost_child_with_label(Label.FULL):
-            print("[Template_Q2] 2) result = False node: " + str(node.id))
+            #print("[Template_Q2] 2) result = False node: " + str(node.id))
             return False
 
         if not has_full_child and not node.get_endmost_child_with_label(Label.PARTIAL):
-            print("[Template_Q2] 3) result = False node: " + str(node.id))
+            #print("[Template_Q2] 3) result = False node: " + str(node.id))
             return False
 
         should_process = True
@@ -524,7 +524,7 @@ class PQtree(object):
             node.full_children.extend(endmost_partial_node.full_children)
             node.mark_partial()
 
-            print("[Template_Q2] 4) result = True node: " + str(node.id))
+            #print("[Template_Q2] 4) result = True node: " + str(node.id))
             return True
 
         # If partial Q-node exists, move all children from it
@@ -570,7 +570,7 @@ class PQtree(object):
 
         node.mark_partial()
 
-        print("[Template_Q2] 5) result = True node: " + str(node.id))
+        #print("[Template_Q2] 5) result = True node: " + str(node.id))
         return True
 
     @staticmethod
@@ -578,7 +578,7 @@ class PQtree(object):
         if node.node_type != Type.Q_NODE or \
            len(node.partial_children) > 2 or \
            not node.full_or_partial_children_are_consecutive():
-            print("[Template_Q3] 1) result = False node: " + str(node.id))
+            #print("[Template_Q3] 1) result = False node: " + str(node.id))
             return False
 
         # Updating direction indicator, i guess it could be re-written
@@ -628,7 +628,7 @@ class PQtree(object):
 
         node.mark_partial()
 
-        print("[Template_Q3] 2) result = True node: " + str(node.id))
+        #print("[Template_Q3] 2) result = True node: " + str(node.id))
         return True
 
     def unblock_sublings(self, node):
