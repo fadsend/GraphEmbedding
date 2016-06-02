@@ -1,6 +1,7 @@
 from graph import Graph
 from linear_algorithm import upward_embed, embed
 from gamma_algorithm import gamma_algorithm
+from random_graph_generation import generate_random_graph, show_graph
 from graph import Edge
 import time
 import sys
@@ -53,13 +54,18 @@ def main():
     }
 
     graphs_lists = [
-        planar_6,
-        planar_10,
-        planar_20,
+        # planar_6,
+        # planar_10,
+        # planar_20,
         # random_25,
         # random_50,
         # random_100
     ]
+
+    for i in [10, 25, 50]:
+        tmp_graph, points = generate_random_graph(i, return_points=True)
+        show_graph(tmp_graph, points)
+        graphs_lists.append(tmp_graph.adj_list)
 
     count_edges = []
     count = 0

@@ -18,6 +18,9 @@ class Point(object):
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
 
+    def __hash__(self):
+        return hash(self.id)
+
 
 class Triangle(object):
 
@@ -38,12 +41,12 @@ class Triangle(object):
         circum_x = (ab * (self.points[2].y - self.points[1].y) + cd * (self.points[0].y - self.points[2].y) +
                     ef * (self.points[1].y - self.points[0].y)) / \
                     (self.points[0].x * (self.points[2].y - self.points[1].y) + self.points[1].x *
-                    (self.points[0].y - self.points[2].y) + self.points[2].x * (self.points[2].y - self.points[0].y)) / 2
+                    (self.points[0].y - self.points[2].y) + self.points[2].x * (self.points[1].y - self.points[0].y)) / 2
 
         circum_y = (ab * (self.points[2].x - self.points[1].x) + cd * (self.points[0].x - self.points[2].x) +
                     ef * (self.points[1].x - self.points[0].x)) / \
                     (self.points[0].y * (self.points[2].x - self.points[1].x) + self.points[1].y *
-                    (self.points[0].x - self.points[2].x) + self.points[2].y * (self.points[2].x - self.points[0].x)) / 2
+                    (self.points[0].x - self.points[2].x) + self.points[2].y * (self.points[1].x - self.points[0].x)) / 2
 
         circum_radius = (((self.points[0].x - circum_x) ** 2) + ((self.points[0].y - circum_y) ** 2)) ** 0.5
 
@@ -145,11 +148,13 @@ def __get_graph_from_triangulation(triangulation):
     return g
 
 
-def generate_random_graph(num):
+def generate_random_graph(num, return_points=False):
     assert num > 0
 
-    points = generate_random_points(num, -100, 100)
 
+    points = generate_random_points(num, -num * 20, num * 20)
+
+    # points = [Point(p[0],p[1], i) for i, p in enumerate([(15,32), (58,17), (42,-31), (-96,-90), (75,-95)])]
     print([str(i) for i in points])
 
     # Initialize empty list of triangles
@@ -174,11 +179,16 @@ def generate_random_graph(num):
 
         bad_edges = []
 
+        #processed = []
+        # polygon = list(set(polygon))
         for i in range(len(polygon)):
             for j in range(len(polygon)):
                 if i == j:
                     continue
                 if polygon[i] == polygon[j]:
+                    #if (j, i) in processed:
+                    #    continue
+                    #processed.append((i, j))
                     bad_edges.append(polygon[i])
                     bad_edges.append(polygon[j])
 
@@ -195,21 +205,22 @@ def generate_random_graph(num):
                 triangulation.remove(triangle)
                 break
 
-    return __get_graph_from_triangulation(triangulation), points
+    g = __get_graph_from_triangulation(triangulation)
+    if return_points:
+        return g, points
+    else:
+        return g
 
-
-if __name__ == "__main__":
-    graph, points = generate_random_graph(5)
-
+def show_graph(g, p):
     ax = pylab.subplot()
     bx = pylab.subplot()
 
-    x = list(map(lambda p: p.x, points))
-    y = list(map(lambda p: p.y, points))
+    x = list(map(lambda w: w.x, p))
+    y = list(map(lambda w: w.y, p))
     num = list(range(len(x)))
 
     tmp_lines = []
-    for edge in graph.get_edges():
+    for edge in g.get_edges():
         e1 = edge.vertices[0]
         e2 = edge.vertices[1]
         tmp_lines.append([(x[e1], y[e1]), (x[e2], y[e2])])
@@ -228,4 +239,9 @@ if __name__ == "__main__":
 
     pylab.show()
 
-    print(graph)
+    print(g)
+
+
+if __name__ == "__main__":
+    g, p = generate_random_graph(100, return_points=True)
+    show_graph(g, p)

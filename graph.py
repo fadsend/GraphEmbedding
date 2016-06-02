@@ -19,6 +19,9 @@ class Edge(object):
         return self.vertices[0] == other.vertices[0] and self.vertices[1] == other.vertices[1] or \
                self.vertices[0] == other.vertices[1] and self.vertices[1] == other.vertices[0]
 
+    def __hash__(self):
+        return hash(self.vertices)
+
 
 class UndirectedEdge(Edge):
 
