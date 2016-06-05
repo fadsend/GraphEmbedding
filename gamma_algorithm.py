@@ -12,7 +12,7 @@ def gamma_algorithm(graph):
     partial_embedding = cycle[:]
     neighbors = [
         [False for _ in range(len(graph.adj_list) + 1)]
-            for _ in range(len(graph.adj_list) + 1)
+               for _ in range(len(graph.adj_list) + 1)
     ]
 
     for i in range(len(cycle) - 1):

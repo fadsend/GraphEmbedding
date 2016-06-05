@@ -4,7 +4,7 @@ import pylab
 import matplotlib.lines as lines
 
 
-
+# TODO: understand how it works
 class Point(object):
 
     def __init__(self, x, y, ident=-1):
@@ -150,8 +150,6 @@ def __get_graph_from_triangulation(triangulation):
 
 def generate_random_graph(num, return_points=False):
     assert num > 0
-
-
     points = generate_random_points(num, -num * 20, num * 20)
 
     # points = [Point(p[0],p[1], i) for i, p in enumerate([(15,32), (58,17), (42,-31), (-96,-90), (75,-95)])]
@@ -211,7 +209,7 @@ def generate_random_graph(num, return_points=False):
     else:
         return g
 
-def show_graph(g, p):
+def show_graph(g, p, static_graph=False):
     ax = pylab.subplot()
     bx = pylab.subplot()
 
@@ -221,8 +219,12 @@ def show_graph(g, p):
 
     tmp_lines = []
     for edge in g.get_edges():
-        e1 = edge.vertices[0]
-        e2 = edge.vertices[1]
+        if static_graph:
+            e1 = edge.data.vertices[0]
+            e2 = edge.data.vertices[1]
+        else:
+            e1 = edge.vertices[0]
+            e2 = edge.vertices[1]
         tmp_lines.append([(x[e1], y[e1]), (x[e2], y[e2])])
 
     for i, n in enumerate(num):

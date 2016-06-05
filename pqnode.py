@@ -203,13 +203,15 @@ class PQnode(object):
             self.data.node_reference = self
         else:
             pass
-        # print("New node is created: id = " + str(self.id) + " " + str(self.data))
+        print("NEW NODE is created: id = " + str(self.id) + " " + str(self.data))
 
         # Aux references for lists of its parent
         self.full_list_node = None
         self.circular_list_node = None
         self.queue_list_node = None
         self.partial_list_node = None
+        if self.id == 30:
+            print("123")
 
     def count_children(self):
         assert self.node_type != Type.Q_NODE

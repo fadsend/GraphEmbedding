@@ -1,7 +1,7 @@
 from graph import Graph
 from linear_algorithm import upward_embed, embed
 from gamma_algorithm import gamma_algorithm
-from random_graph_generation import generate_random_graph, show_graph
+from random_graph_generation import generate_random_graph, show_graph, Point
 from graph import Edge
 import time
 import sys
@@ -62,10 +62,20 @@ def main():
         # random_100
     ]
 
-    for i in [10, 25, 50]:
-        tmp_graph, points = generate_random_graph(i, return_points=True)
-        show_graph(tmp_graph, points)
+    for i in [100]:
+        tmp_graph = Graph()
+        #tmp_graph.construct_graph_from_adj_list({0: [4, 5, 2, 9], 1: [4, 5, 3, 7, 8, 9], 2: [3, 6, 0, 9], 3: [2, 6, 1, 7, 9], 4: [0, 5, 1, 9], 5: [4, 0, 1, 8], 6: [2, 3, 7], 7: [3, 1, 6, 8], 8: [1, 5, 7], 9: [1, 3, 2, 0, 4]})
+        #points_t = [(96, 53), (-82, 78), (61, -98), (-71, -89), (85, 99), (124, 190), (-21, -146), (-156,-103), (-177,147), (27,60)]
+        tmp_graph.construct_graph_from_adj_list({0: [1, 2, 3], 1: [0, 2, 8, 5], 2: [0, 1, 3, 7, 6, 8], 3: [0, 2, 7, 9], 4: [5, 8, 6, 9], 5: [1, 8, 4], 6: [2, 7, 8, 4, 9], 7: [3, 2, 6, 9], 8: [2, 1, 6, 5, 4], 9: [6, 4, 7, 3]})
+        points_t = [(-183,-5), (-112,-157), (-171,11), (-184,172), (123,3), (-9,-156), (-53,68), (-122,81), (-15,-130), (-90,183)]
+        points = []
+        for i, p in enumerate(points_t):
+            points.append(Point(p[0], p[1], i))
+        #tmp_graph, points = generate_random_graph(i, return_points=True)
+        #show_graph(tmp_graph, points, True)
         graphs_lists.append(tmp_graph.adj_list)
+        print("GRAPH" + str(tmp_graph.adj_list))
+        print("POINTS " + str([str(i) for i in points]))
 
     count_edges = []
     count = 0
@@ -85,7 +95,7 @@ def main():
     run = {
         "linear": True,
         "gamma": True,
-        "retries": 10
+        "retries": 1
     }
 
     results = {

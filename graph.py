@@ -1,5 +1,6 @@
 from pqnode import Data
 from enum import Enum
+import random
 
 
 class Edge(object):
@@ -12,15 +13,25 @@ class Edge(object):
     def get_lower(self):
         return min(self.vertices[0], self.vertices[1])
 
+    def get_opposite(self, v):
+        if self.vertices[0] == v:
+            return self.vertices[1]
+        elif self.vertices[1] == v:
+            return self.vertices[0]
+        else:
+            assert False
+
     def __str__(self):
         return "(" + str(self.vertices[0]) + ", " + str(self.vertices[1]) + ")"
 
     def __eq__(self, other):
+        if other is None:
+            return False
         return self.vertices[0] == other.vertices[0] and self.vertices[1] == other.vertices[1] or \
                self.vertices[0] == other.vertices[1] and self.vertices[1] == other.vertices[0]
 
     def __hash__(self):
-        return hash(self.vertices)
+        return hash(tuple(sorted(self.vertices)))
 
 
 class UndirectedEdge(Edge):
@@ -56,6 +67,8 @@ class Graph(object):
         self.new_adj_list = {}
         self.edges_list = []
         self.num_of_vertices = 0
+        # Store old vertex numbers when st-numbering is computed
+        self.vertex_mapping = {}
 
     def add_edge(self, edge):
         assert type(edge) == Edge
@@ -184,6 +197,8 @@ class Graph(object):
         for i in cycle:
             cycle_list[i] = True
 
+        single_edge_segments = []
+
         already_processed = {i : False for i in self.adj_list.keys()}
         # Search for single-edge segments
         for v in cycle:
@@ -192,11 +207,14 @@ class Graph(object):
                     continue
                 if not neighbors[v][n] and cycle_list[n]:
                     seg = Graph()
-                    seg.construct_graph_from_list([Edge(v, n)])
+                    e = Edge(v, n)
+                    seg.construct_graph_from_list([e])
+                    single_edge_segments.append(e)
                     segments.append(seg)
                     already_processed[v] = True
 
         def dfs_segment(start, dfs_marks, graph_cycle, segment):
+            nonlocal single_edge_segments
             stack = [start]
 
             while len(stack) > 0:
@@ -204,6 +222,8 @@ class Graph(object):
                 if not dfs_marks[vertex]:
                     dfs_marks[vertex] = True
                     for adj_vertex in self.adj_list[vertex]:
+                        if Edge(adj_vertex, vertex) in single_edge_segments:
+                            continue
                         if not(vertex in graph_cycle and neighbors[vertex][adj_vertex]):
                             segment.add_edge(Edge(vertex, adj_vertex))
                         if adj_vertex not in graph_cycle:
@@ -217,7 +237,8 @@ class Graph(object):
             if not marks[v]:
                 seg = Graph()
                 dfs_segment(v, marks, cycle, seg)
-                if seg.get_num_of_vertices() != 0:
+                # Ignore segments with 2 vertices since they already been added
+                if seg.get_num_of_vertices() > 2:
                     segments.append(seg)
 
         return segments
@@ -225,13 +246,12 @@ class Graph(object):
     def dfs_chain(self, marks, partial_embedding, chain, v):
         marks[v] = True
         chain.append(v)
-        if len(chain) > 5:
-            print("12")
         count_marks = 0
         for adj_v in self.adj_list[v]:
             if not marks[adj_v]:
                 if adj_v not in partial_embedding:
                     if self.dfs_chain(marks, partial_embedding, chain, adj_v):
+                        count_marks += 1
                         continue
                 else:
                     chain.append(adj_v)
@@ -268,8 +288,138 @@ class Graph(object):
                         return False
         return True
 
+    def __get_random_edge(self):
+        idx = random.randint(0, len(self.edges_list) - 1)
+        random_edge = self.edges_list[idx]
+        return random_edge.data.get_lower(), random_edge.data.get_higher()
+
     def compute_st_numbering(self):
-        return None
+        count = 1
+        numbering = {i: 0 for i in self.adj_list.keys()}
+        low_number = {i: 0 for i in self.adj_list.keys()}
+        dfs_number = {i: 0 for i in self.adj_list.keys()}
+        dfs_incoming_edge = {i: None for i in self.adj_list.keys()}
+        follow_low_path = {i: None for i in self.adj_list.keys()}
+        marked_nodes = {i: False for i in self.adj_list.keys()}
+        list_edges = []
+        for i in self.adj_list.keys():
+            for j in self.adj_list[i]:
+                if i >= j:
+                    continue
+                list_edges.append(Edge(i, j))
+        marked_edges = {i: False for i in list_edges}
+
+        # st_edge = (0, 8)
+        #st_edge = (7, 9)
+        st_edge = self.__get_random_edge() # (0, 3)
+        print("S-T EDGE: " + str(st_edge))
+
+        s = st_edge[0]
+        t = st_edge[1]
+
+        dfs_number[t] = count
+        low_number[t] = count
+        count += 1
+
+        # Computes dfs number and low number for a graph
+        def __st_search(vertex):
+            nonlocal count
+            dfs_number[vertex] = count
+            low_number[vertex] = count
+            count += 1
+
+            for p in self.adj_list[vertex]:
+                # Vertex has not been visited
+                if dfs_number[p] == 0:
+                    dfs_incoming_edge[p] = Edge(vertex, p)
+                    __st_search(p)
+                    if low_number[vertex] > low_number[p]:
+                        low_number[vertex] = low_number[p]
+                        follow_low_path[vertex] = Edge(vertex, p)
+
+                elif low_number[vertex] > dfs_number[p]:
+                    low_number[vertex] = dfs_number[p]
+                    follow_low_path[vertex] = Edge(vertex, p)
+
+        __st_search(s)
+
+        # Why is needed???
+        if low_number[t] < low_number[s]:
+            low_number[t] = low_number[s]
+
+        node_stack = [t, s]
+        count = 1
+        marked_edges[Edge(s, t)] = True
+        marked_nodes[s] = True
+        marked_nodes[t] = True
+
+        v = node_stack.pop()
+        adj = 0
+        path = []
+
+        def __st_path(vertex):
+            global adj
+
+            for p in self.adj_list[vertex]:
+                e = Edge(p, vertex)
+                if marked_edges[e]:
+                    continue
+                marked_edges[e] = True
+                if dfs_incoming_edge[p] == e:
+                    path.append(vertex)
+                    w = p
+                    while not marked_nodes[w]:
+                        e = follow_low_path[w]
+                        path.append(w)
+                        marked_nodes[w] = True
+                        marked_edges[e] = True
+                        w = e.get_opposite(w)
+
+                    return True
+                elif dfs_number[vertex] < dfs_number[p]:
+                    path.append(vertex)
+                    w = p
+                    while not marked_nodes[w]:
+                        e = dfs_incoming_edge[w]
+                        path.append(w)
+                        marked_nodes[w] = True
+                        marked_edges[e] = True
+                        w = e.get_opposite(w)
+                    return True
+                else:
+                    return False
+
+            return False
+
+        while v != t:
+            if not __st_path(v):
+                numbering[v] = count
+                count += 1
+                adj = 0
+            else:
+                while len(path) > 0:
+                    node_stack.append(path.pop())
+            v = node_stack.pop()
+        numbering[t] = count
+        self.__update_numbering(numbering)
+
+    def __update_numbering(self, numbering):
+        self.vertex_mapping = dict(zip(numbering.keys(), numbering.values()))
+        new_adj_list = {}
+        for v in self.adj_list:
+            new_adj_list[numbering[v]] = []
+            for k in self.adj_list[v]:
+                new_adj_list[numbering[v]].append(numbering[k])
+
+        self.adj_list = new_adj_list
+
+        self.new_adj_list = {}
+        for v in self.adj_list.keys():
+            self.new_adj_list[v] = []
+
+        for edge in self.edges_list:
+            edge.data.vertices = (numbering[edge.data.vertices[0]], numbering[edge.data.vertices[1]])
+
 
     def get_edges(self):
         return self.edges_list
