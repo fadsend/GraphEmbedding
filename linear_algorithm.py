@@ -38,14 +38,14 @@ def upward_embed(graph):
         assert pertinent_root is not None
 
         print("---------------END of reduction --------------")
-        print(tree)
+        # print(tree)
         if pertinent_root.node_type == Type.Q_NODE:
             print("Replacing Q-node")
             adj_list = tree.replace_full_children(pertinent_root, PQtree(subset1, True).get_root(), iteration)
         else:
             print("Replacing P-node")
             adj_list = tree.replace_node(pertinent_root, PQtree(subset1, True).get_root())
-
+        tree.reset_pseudo_node()
         print(tree)
         tmp123 = []
         for tmp in adj_list:

@@ -213,23 +213,39 @@ class Graph(object):
                     segments.append(seg)
                     already_processed[v] = True
 
-        def dfs_segment(start, dfs_marks, graph_cycle, segment):
-            nonlocal single_edge_segments
-            stack = [start]
 
-            while len(stack) > 0:
-                vertex = stack.pop()
-                if not dfs_marks[vertex]:
-                    dfs_marks[vertex] = True
-                    for adj_vertex in self.adj_list[vertex]:
-                        if Edge(adj_vertex, vertex) in single_edge_segments:
-                            continue
-                        if not(vertex in graph_cycle and neighbors[vertex][adj_vertex]):
-                            segment.add_edge(Edge(vertex, adj_vertex))
-                        if adj_vertex not in graph_cycle:
-                            stack.append(adj_vertex)
-                        else:
-                            dfs_marks[adj_vertex] = True
+
+        def __dfs_segment_recursive(vertex, dfs_marks, graph_cycle, segment):
+            nonlocal single_edge_segments
+
+            dfs_marks[vertex] = True
+            for adj in self.adj_list[vertex]:
+                if not dfs_marks[adj]:
+                    # Should not go through cycle
+                    if neighbors[vertex][adj]:
+                        dfs_marks[adj] = True
+                        continue
+
+                    # If reached cycle, add edge, but do not go to recursion
+                    if adj in graph_cycle:
+                        segment.add_edge(Edge(adj, vertex))
+                        dfs_marks[adj] = True
+                        continue
+
+                    # Check for single edge segments which has already been added on step 1
+                    if Edge(adj, vertex) in single_edge_segments:
+                        dfs_marks[adj] = True
+                        continue
+
+                    __dfs_segment_recursive(adj, dfs_marks, graph_cycle, segment)
+
+        def dfs_segment(start, dfs_marks, graph_cycle, segment):
+            dfs_marks[start] = True
+            for adj in self.adj_list[start]:
+                if not dfs_marks[adj]:
+                    # Should go only to single vertices at a time
+                    __dfs_segment_recursive(adj, dfs_marks, graph_cycle, segment)
+                    break
 
         # Search for segments with multiple edges
         marks = {i: False for i in self.adj_list.keys()}
@@ -309,10 +325,10 @@ class Graph(object):
                 list_edges.append(Edge(i, j))
         marked_edges = {i: False for i in list_edges}
 
-        # st_edge = (0, 8)
-        #st_edge = (7, 9)
-        st_edge = self.__get_random_edge() # (0, 3)
+        st_edge = (2, 5)
+        # st_edge = self.__get_random_edge() # (0, 3)
         print("S-T EDGE: " + str(st_edge))
+        assert st_edge[1] in self.adj_list[st_edge[0]] and st_edge[0] in self.adj_list[st_edge[1]]
 
         s = st_edge[0]
         t = st_edge[1]
@@ -387,7 +403,7 @@ class Graph(object):
                         w = e.get_opposite(w)
                     return True
                 else:
-                    return False
+                    continue
 
             return False
 

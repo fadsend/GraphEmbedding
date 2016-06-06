@@ -62,17 +62,19 @@ def main():
         # random_100
     ]
 
-    for i in [100]:
+    for i in [7]:
+        # TODO: create testsuite for this graphs
         tmp_graph = Graph()
-        #tmp_graph.construct_graph_from_adj_list({0: [4, 5, 2, 9], 1: [4, 5, 3, 7, 8, 9], 2: [3, 6, 0, 9], 3: [2, 6, 1, 7, 9], 4: [0, 5, 1, 9], 5: [4, 0, 1, 8], 6: [2, 3, 7], 7: [3, 1, 6, 8], 8: [1, 5, 7], 9: [1, 3, 2, 0, 4]})
-        #points_t = [(96, 53), (-82, 78), (61, -98), (-71, -89), (85, 99), (124, 190), (-21, -146), (-156,-103), (-177,147), (27,60)]
-        tmp_graph.construct_graph_from_adj_list({0: [1, 2, 3], 1: [0, 2, 8, 5], 2: [0, 1, 3, 7, 6, 8], 3: [0, 2, 7, 9], 4: [5, 8, 6, 9], 5: [1, 8, 4], 6: [2, 7, 8, 4, 9], 7: [3, 2, 6, 9], 8: [2, 1, 6, 5, 4], 9: [6, 4, 7, 3]})
-        points_t = [(-183,-5), (-112,-157), (-171,11), (-184,172), (123,3), (-9,-156), (-53,68), (-122,81), (-15,-130), (-90,183)]
+        # tmp_graph.construct_graph_from_adj_list({0: [2, 5, 4, 1, 6], 1: [0, 6, 3], 2: [3, 4, 0, 5, 6], 3: [2, 4, 6, 1], 4: [2, 3, 0, 5], 5: [0, 2, 4], 6: [0, 1, 2, 3]})
         points = []
+        tmp_graph.construct_graph_from_adj_list({0: [1, 4, 5, 6], 1: [2, 3, 0, 4], 2: [1, 3, 4, 5], 3: [2, 1], 4: [0, 1, 2, 5], 5: [4, 2, 0, 6], 6: [0, 5]})
+        points_t = [(-67, 98), (-123,-55), (-10,-75), (-126,-114), (-71,-7), (60,-48), (118,114)]
+        # points_t = [(-28, -4), (-108, 8), (-32, -66), (-117, -104), (118, -100), (18, -45), (-88,3)]
+
         for i, p in enumerate(points_t):
             points.append(Point(p[0], p[1], i))
-        #tmp_graph, points = generate_random_graph(i, return_points=True)
-        #show_graph(tmp_graph, points, True)
+        # tmp_graph, points = generate_random_graph(i, return_points=True)
+        show_graph(tmp_graph, points, True)
         graphs_lists.append(tmp_graph.adj_list)
         print("GRAPH" + str(tmp_graph.adj_list))
         print("POINTS " + str([str(i) for i in points]))
@@ -103,6 +105,11 @@ def main():
         "gamma": []
     }
 
+    result_str = {
+        "linear": "",
+        "gamma": ""
+    }
+
     if run["linear"]:
         run_count = run["retries"]
 
@@ -119,8 +126,10 @@ def main():
                     print("Graph is planar")
                     embedded_graph = embed(graph)
                     embedded_graph.print_adj()
+                    result_str["linear"] = "PLANAR"
                 else:
                     print("Graph is none planar")
+                    result_str["linear"] = "NOT PLANAR"
                 end_time = time.time()
                 time_list.append(end_time - start_time)
             print("##############End####################")
@@ -153,8 +162,10 @@ def main():
                     print("Graph is planar")
                     print(faces)
                     print(outer)
+                    result_str["gamma"] = "PLANAR"
                 else:
                     print("Graph is none planar")
+                    result_str["gamma"] = "NOT PLANAR"
                 end_time = time.time()
                 time_list.append(end_time - start_time)
             test_result[i] = time_list[:]
@@ -172,6 +183,8 @@ def main():
     print("##########RESULTS##############")
     print("NUM OF VERTICES: " + str(num_of_vertices))
     print("NUM OF EDGES: " + str(count_edges))
+    print("RESULT LINEAR: " + result_str["linear"])
+    print("RESULT GAMMA: " + result_str["gamma"])
     print("LINEAR: " + str(results["linear"]))
     print("GAMMA: " + str(results["gamma"]))
     print("###############################")

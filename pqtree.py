@@ -533,6 +533,10 @@ class PQtree(object):
                 ec.parent = node
             # Move all full nodes from endmost_partial_node to node
             node.full_children.extend(endmost_partial_node.full_children)
+
+            for full in endmost_partial_node.full_children:
+                full.parent = node
+
             node.mark_partial()
 
             print("[Template_Q2] 4) result = True node: " + str(node.id))
@@ -633,6 +637,10 @@ class PQtree(object):
                     partial_node_sibling.replace_sibling(partial_node, partial_node_child)
 
             node.full_children.extend(partial_node.full_children)
+            # Remember parent to find pertinent subroot correctly
+            for full_child in partial_node.full_children:
+                full_child.parent = node
+
             partial_node.full_reset_node()
 
         node.partial_children = dllist()
@@ -670,25 +678,7 @@ class PQtree(object):
             self.pseudo_node.endmost_children[i].add_sibling(self.pseudo_siblings[i])
             self.pseudo_siblings[i].add_sibling(self.pseudo_node.endmost_children[i])
             # Just in case
-            self.pseudo_node.endmost_children[i].parent = self.pseudo_siblings[i].parent
-
-        #pertinent_root = self.root
-        #for pr in self.root.iter_children():
-        #    if pr.node_type == Type.Q_NODE:
-        #        for child in pr.iter_children():
-        #            if child == self.pseudo_node.endmost_children[0] or \
-        #                child == self.pseudo_node.endmost_children[1]:
-        #                pertinent_root = child
-        #                break
-
-        # self.pseudo_pertinent_root.full_children = self.pseudo_node.full_children
-        # for full_child in self.pseudo_node.full_children:
-        #    full_child.parent = pertinent_root
-
-        # self.pseudo_pertinent_root = None
-
-        # TODO: not sure about this
-        # self.root.mark_partial()
+            # self.pseudo_node.endmost_children[i].parent = self.pseudo_siblings[i].parent
 
         self.pseudo_node.clear_endmost()
         self.pseudo_node = None
@@ -860,7 +850,7 @@ def __reduce(tree, subset):
                not PQtree.template_p5(node) and \
                not PQtree.template_q1(node) and \
                not PQtree.template_q2(node):
-                tree.reset_pseudo_node()
+                # tree.reset_pseudo_node()
                 return PQtree([])
 
         else:
@@ -872,10 +862,10 @@ def __reduce(tree, subset):
                not PQtree.template_q1(node) and \
                not PQtree.template_q2(node) and \
                not PQtree.template_q3(node):
-                tree.reset_pseudo_node()
+                # tree.reset_pseudo_node()
                 return PQtree([])
 
-    tree.reset_pseudo_node()
+    # tree.reset_pseudo_node()
     return tree
 
 
