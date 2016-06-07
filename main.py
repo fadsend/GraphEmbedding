@@ -5,6 +5,7 @@ from random_graph_generation import generate_random_graph, show_graph, Point
 from graph import Edge
 import time
 import sys
+import os
 
 
 def main():
@@ -62,22 +63,29 @@ def main():
         # random_100
     ]
 
-    for i in [7]:
+    # TODO: change
+    tmp_stdout = sys.stdout
+    f = open(os.devnull, "w")
+    sys.stdout = f
+
+    points_list = {}
+
+    # TODO: change
+    for idx, i in enumerate([10, 20, 40, 80, 160]):
         # TODO: create testsuite for this graphs
         tmp_graph = Graph()
-        # tmp_graph.construct_graph_from_adj_list({0: [2, 5, 4, 1, 6], 1: [0, 6, 3], 2: [3, 4, 0, 5, 6], 3: [2, 4, 6, 1], 4: [2, 3, 0, 5], 5: [0, 2, 4], 6: [0, 1, 2, 3]})
         points = []
-        tmp_graph.construct_graph_from_adj_list({0: [1, 4, 5, 6], 1: [2, 3, 0, 4], 2: [1, 3, 4, 5], 3: [2, 1], 4: [0, 1, 2, 5], 5: [4, 2, 0, 6], 6: [0, 5]})
-        points_t = [(-67, 98), (-123,-55), (-10,-75), (-126,-114), (-71,-7), (60,-48), (118,114)]
-        # points_t = [(-28, -4), (-108, 8), (-32, -66), (-117, -104), (118, -100), (18, -45), (-88,3)]
-
-        for i, p in enumerate(points_t):
-            points.append(Point(p[0], p[1], i))
-        # tmp_graph, points = generate_random_graph(i, return_points=True)
-        show_graph(tmp_graph, points, True)
+        # points_t = [(44,99), (28,-114), (118,25), (70,3), (86,130), (-58,68), (20,66)]
+        # tmp_graph.construct_graph_from_adj_list({0: [2, 3, 4, 5, 6], 1: [2, 3, 5], 2: [0, 3, 1, 4], 3: [2, 0, 1, 5, 6], 4: [0, 2, 5], 5: [1, 3, 0, 4, 6], 6: [3, 0, 5]})
+        # Graph.st_edge = (0, 5)
+        # for i, p in enumerate(points_t):
+        #     points.append(Point(p[0], p[1], i))
+        tmp_graph, points = generate_random_graph(i, return_points=True)
+        # show_graph(tmp_graph, points, True)
         graphs_lists.append(tmp_graph.adj_list)
         print("GRAPH" + str(tmp_graph.adj_list))
         print("POINTS " + str([str(i) for i in points]))
+        points_list[idx] = str([str(i) for i in points])
 
     count_edges = []
     count = 0
@@ -91,12 +99,12 @@ def main():
 
     num_of_vertices = [len(t.keys()) for t in graphs_lists]
 
-
     test_result = {}
 
     run = {
         "linear": True,
         "gamma": True,
+        # TODO: change
         "retries": 1
     }
 
@@ -115,7 +123,7 @@ def main():
 
         for i in range(run_count):
             time_list = []
-            for g in graphs_lists:
+            for index, g in enumerate(graphs_lists):
                 print("##############Iteration#############")
                 graph = Graph()
                 graph.construct_graph_from_adj_list(g)
@@ -130,6 +138,7 @@ def main():
                 else:
                     print("Graph is none planar")
                     result_str["linear"] = "NOT PLANAR"
+                    assert False
                 end_time = time.time()
                 time_list.append(end_time - start_time)
             print("##############End####################")
@@ -150,7 +159,7 @@ def main():
 
         for i in range(run_count):
             time_list = []
-            for g in graphs_lists:
+            for gamma_index, g in enumerate(graphs_lists):
                 graph = Graph()
                 graph.construct_graph_from_adj_list(g)
                 print("#######################################################")
@@ -166,6 +175,7 @@ def main():
                 else:
                     print("Graph is none planar")
                     result_str["gamma"] = "NOT PLANAR"
+                    assert False
                 end_time = time.time()
                 time_list.append(end_time - start_time)
             test_result[i] = time_list[:]
@@ -179,6 +189,8 @@ def main():
             final_results[i] /= run_count
 
         results["gamma"] = final_results
+
+    sys.stdout = tmp_stdout
 
     print("##########RESULTS##############")
     print("NUM OF VERTICES: " + str(num_of_vertices))

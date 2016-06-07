@@ -35,7 +35,6 @@ class Edge(object):
 
 
 class UndirectedEdge(Edge):
-
     def __eq__(self, other):
         return (self.vertices[0] == other.vertices[0] or self.vertices[0] == other.vertices[1]) and \
                (self.vertices[1] == other.vertices[0] or self.vertices[1] == other.vertices[1])
@@ -59,7 +58,8 @@ class Color(Enum):
 
 
 class Graph(object):
-
+    # TODO: temporary, should be removed
+    st_edge = None
     # TODO: temporary implementation. It should be changed for adjacency list
     def __init__(self):
         self.adj_list = {}
@@ -69,6 +69,7 @@ class Graph(object):
         self.num_of_vertices = 0
         # Store old vertex numbers when st-numbering is computed
         self.vertex_mapping = {}
+        self.st_edge = Graph.st_edge
 
     def add_edge(self, edge):
         assert type(edge) == Edge
@@ -199,7 +200,7 @@ class Graph(object):
 
         single_edge_segments = []
 
-        already_processed = {i : False for i in self.adj_list.keys()}
+        already_processed = {i: False for i in self.adj_list.keys()}
         # Search for single-edge segments
         for v in cycle:
             for n in self.adj_list[v]:
@@ -212,8 +213,6 @@ class Graph(object):
                     single_edge_segments.append(e)
                     segments.append(seg)
                     already_processed[v] = True
-
-
 
         def __dfs_segment_recursive(vertex, dfs_marks, graph_cycle, segment):
             nonlocal single_edge_segments
@@ -281,7 +280,6 @@ class Graph(object):
                     chain.pop()
                     return True
 
-
     def get_chain(self, partial_embedding):
         chain = []
         marks = {i: False for i in self.adj_list.keys()}
@@ -300,7 +298,7 @@ class Graph(object):
             for k in self.adj_list[v]:
                 if segment.has_edge(v, k):
                     if v in partial_embedding and v not in face or \
-                       k in partial_embedding and k not in face:
+                                            k in partial_embedding and k not in face:
                         return False
         return True
 
@@ -325,13 +323,14 @@ class Graph(object):
                 list_edges.append(Edge(i, j))
         marked_edges = {i: False for i in list_edges}
 
-        st_edge = (2, 5)
-        # st_edge = self.__get_random_edge() # (0, 3)
-        print("S-T EDGE: " + str(st_edge))
-        assert st_edge[1] in self.adj_list[st_edge[0]] and st_edge[0] in self.adj_list[st_edge[1]]
+        if self.st_edge is None:
+            self.st_edge = self.__get_random_edge()
+        print("S-T EDGE: " + str(self.st_edge))
+        assert self.st_edge[1] in self.adj_list[self.st_edge[0]] and \
+               self.st_edge[0] in self.adj_list[self.st_edge[1]]
 
-        s = st_edge[0]
-        t = st_edge[1]
+        s = self.st_edge[0]
+        t = self.st_edge[1]
 
         dfs_number[t] = count
         low_number[t] = count
@@ -427,6 +426,7 @@ class Graph(object):
             for k in self.adj_list[v]:
                 new_adj_list[numbering[v]].append(numbering[k])
 
+        self.old_adj_list = self.adj_list
         self.adj_list = new_adj_list
 
         self.new_adj_list = {}
@@ -435,7 +435,6 @@ class Graph(object):
 
         for edge in self.edges_list:
             edge.data.vertices = (numbering[edge.data.vertices[0]], numbering[edge.data.vertices[1]])
-
 
     def get_edges(self):
         return self.edges_list
@@ -448,6 +447,7 @@ class Graph(object):
 
     def print_adj(self):
         print(self.adj_list)
+
 
 if __name__ == "__main__":
     graph = Graph()

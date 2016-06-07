@@ -569,16 +569,17 @@ class PQtree(object):
                 # Override parent node just in case
                 assert partial_child is not None
 
-                partial_child.parent = node
-                if partial_child.label == Label.FULL:
-                    partial_child.mark_full()
-
                 # Update direction indicators
                 partial_node.replace_direction_indicator(partial_child, child.label)
 
                 if partial_child.has_indicator(None):
                     indicator = partial_child.get_indicator(None)
                     indicator.replace_node_for_indicator(None, sibling_of_partial)
+
+            # Extend full_children list of node
+            for full_node in partial_node.full_children:
+                full_node.parent = node
+                full_node.mark_full()
 
             node.partial_children.remove(partial_node.partial_list_node)
             partial_node.parent = None
@@ -878,6 +879,6 @@ def reduce_tree(tree, subset):
     if tree.is_empty():
         raise ReductionFailed()
 
-    tree.post_reset()
+    # tree.post_reset()
     return tree
 
