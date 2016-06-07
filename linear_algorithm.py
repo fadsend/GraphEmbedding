@@ -10,7 +10,7 @@ def upward_embed(graph):
     universe = graph.get_edges_lower(start_idx)
     n = graph.get_num_of_vertices()
     tree = PQtree(universe)
-    print(tree)
+    #print(tree)
     for iteration in range(start_idx + 1, n + 1):
         subset = graph.get_edges_higher(iteration)
 
@@ -21,7 +21,7 @@ def upward_embed(graph):
         for node in subset:
             if node.node_reference is None:
                 tree.root.add_child(Type.LEAF, node)
-                print("NONE REFS" + str(node))
+                #print("NONE REFS" + str(node))
 
         try:
             tree = reduce_tree(tree, subset)
@@ -29,7 +29,7 @@ def upward_embed(graph):
             return False
         tmp_list = DirectionIndicator.list_of_instances
 
-        print([str(i) for i in tmp_list])
+        #print([str(i) for i in tmp_list])
 
         subset1 = graph.get_edges_lower(iteration)
 
@@ -37,16 +37,16 @@ def upward_embed(graph):
         pertinent_root = tree.get_pertinent_root(subset)
         assert pertinent_root is not None
 
-        print("---------------END of reduction --------------")
+        #print("---------------END of reduction --------------")
         # print(tree)
         if pertinent_root.node_type == Type.Q_NODE:
-            print("Replacing Q-node")
+            #print("Replacing Q-node")
             adj_list = tree.replace_full_children(pertinent_root, PQtree(subset1, True).get_root(), iteration)
         else:
-            print("Replacing P-node")
+            #print("Replacing P-node")
             adj_list = tree.replace_node(pertinent_root, PQtree(subset1, True).get_root())
         tree.reset_pseudo_node()
-        print(tree)
+        #print(tree)
         tmp123 = []
         for tmp in adj_list:
             if type(tmp) == str:

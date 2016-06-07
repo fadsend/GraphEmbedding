@@ -143,6 +143,7 @@ class TestReduction(unittest.TestCase):
         root.add_child(Type.LEAF, data[13])
 
         tree = reduce_tree(tree, [data[i] for i in [0, 7, 2, 6, 14, 3]])
+        tree.reset_pseudo_node()
         print(tree)
         self.assertTrue(check_consecutive(tree.get_frontier(), [[0, 2, 3, 6, 7, 14]]))
         # Check that endmost_children of pseudo_node has a root as a parent, since pseudo_node

@@ -71,7 +71,7 @@ def main():
     points_list = {}
 
     # TODO: change
-    for idx, i in enumerate([10, 20, 40, 80, 160]):
+    for idx, i in enumerate([20, 40, 60, 120, 240]):
         # TODO: create testsuite for this graphs
         tmp_graph = Graph()
         points = []

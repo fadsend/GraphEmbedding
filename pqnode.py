@@ -61,7 +61,7 @@ class DirectionIndicator(object):
         self.data = data
         self.id = DirectionIndicator.id_counter
         DirectionIndicator.id_counter += 1
-        print("INDICATOR CREATED WITH ID = " + str(self.id))
+        #print("INDICATOR CREATED WITH ID = " + str(self.id))
         DirectionIndicator.list_of_instances.append(self)
         # print("Direction indicator #" + str(self.id) + " is created")
         self.prev_node = None
@@ -203,15 +203,15 @@ class PQnode(object):
             self.data.node_reference = self
         else:
             pass
-        print("NEW NODE is created: id = " + str(self.id) + " " + str(self.data))
+        #print("NEW NODE is created: id = " + str(self.id) + " " + str(self.data))
 
         # Aux references for lists of its parent
         self.full_list_node = None
         self.circular_list_node = None
         self.queue_list_node = None
         self.partial_list_node = None
-        if self.id == 30:
-            print("123")
+        #if self.id == 30:
+            #print("123")
 
     def count_children(self):
         assert self.node_type != Type.Q_NODE
@@ -259,8 +259,8 @@ class PQnode(object):
         assert self.node_type != Type.LEAF
 
         if self.node_type == Type.P_NODE:
-            if old_child.circular_list_node is None:
-                print("123")
+            #if old_child.circular_list_node is None:
+                #print("123")
             self.circular_link.remove(old_child.circular_list_node)
             new_child.circular_list_node = self.circular_link.append(new_child)
         else:
@@ -685,7 +685,8 @@ class PQnode(object):
                     # TODO: check direction here
                     full_leaves.append("|" + str(child.prev_indicator) + ">")
                 else:
-                    print("Repeated indicator 12")
+                    pass
+                    #print("Repeated indicator 12")
             if child.next_indicator:
                 if child.next_indicator not in found_direction_indicators:
                     found_direction_indicators.append(child.next_indicator)
@@ -693,7 +694,8 @@ class PQnode(object):
                     # TODO: check direction here
                     full_leaves.append("|" + str(child.next_indicator) + ">")
                 else:
-                    print("Repeated indicator 22")
+                    pass
+                    #print("Repeated indicator 22")
             if child.node_type == Type.LEAF:
                 full_leaves.append(child)
             else:
@@ -702,7 +704,7 @@ class PQnode(object):
 
     def replace_direction_indicator(self, new_node, label=None):
         if not self.next_indicator and not self.prev_indicator:
-            print("No indicator for the node")
+            #print("No indicator for the node")
             return
 
         if self.next_indicator:
