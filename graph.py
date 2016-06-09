@@ -236,8 +236,8 @@ class Graph(object):
                 if adj == parent or neighbors[vertex][adj]:
                     continue
 
-                #if not segment.has_edge(vertex, adj):
-                segment.add_edge(Edge(vertex, adj))
+                if not segment.has_edge(vertex, adj):
+                    segment.add_edge(Edge(vertex, adj))
 
                 if not dfs_marks[adj]:
                     # If reached cycle, add edge, but do not go to recursion
@@ -255,11 +255,15 @@ class Graph(object):
         marks = {i: False for i in self.adj_list.keys()}
         for v in cycle:
             if not marks[v]:
-                seg = Graph()
-                __dfs_segment_recursive(v, marks, cycle_list, seg, -1)
-                # Ignore segments with 2 vertices since they already been added
-                if seg.get_num_of_vertices() > 2:
-                    segments.append(seg)
+                for adj in self.adj_list[v]:
+                    if not neighbors[v][adj]:
+                        marks[v] = True
+                        seg = Graph()
+                        seg.add_edge(Edge(v, adj))
+                        __dfs_segment_recursive(adj, marks, cycle_list, seg, v)
+                        # Ignore segments with 2 vertices since they already been added
+                        if seg.get_num_of_vertices() > 2:
+                            segments.append(seg)
 
         return segments
 
@@ -310,7 +314,7 @@ class Graph(object):
             for k in self.adj_list[v]:
                 if segment.has_edge(v, k):
                     if v in partial_embedding and v not in face or \
-                                            k in partial_embedding and k not in face:
+                       k in partial_embedding and k not in face:
                         return False
         return True
 

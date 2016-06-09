@@ -58,14 +58,7 @@ def main():
         20: [16, 17, 19, 11],
     }
 
-    graphs_lists = [
-        # planar_6,
-        # planar_10,
-        # planar_20,
-        # random_25,
-        # random_50,
-        # random_100
-    ]
+    graphs_lists = []
 
     # TODO: change
     tmp_stdout = sys.stdout
@@ -74,9 +67,8 @@ def main():
 
     points_list = {}
 
-    vertices = [10 * 2 ** i for i in range(5)]
-    #vertices = [20, 40, 80, 160]
-    NON_PLANAR = True
+    vertices = [10 * 2 ** i for i in range(9)]
+    NON_PLANAR = False
     # TODO: change
     for idx, i in enumerate(vertices):
         # TODO: create testsuite for this graphs
@@ -103,11 +95,14 @@ def main():
         # TODO: run and fix
         #tmp_graph.construct_graph_from_adj_list({0: [2, 5, 3, 9, 4], 1: [2, 7, 6, 8], 2: [0, 5, 1, 7, 8, 9], 3: [0, 5], 4: [6, 8, 0, 9], 5: [0, 2, 3], 6: [1, 7, 8, 4], 7: [2, 1, 6], 8: [1, 2, 6, 4, 9], 9: [2, 0, 8, 4]})
         #points_t = [(-103,-156), (8,79), (-130,35), (-158,-134),(197,-177),(-189,-40),(198,-3),(88,172),(70,-32),(45,-125)]
+
+        #tmp_graph.construct_graph_from_adj_list({0: [1, 4, 5, 6, 8, 9], 1: [0, 4, 3, 7, 8], 2: [3, 5, 7, 4, 9], 3: [2, 5, 1, 7], 4: [0, 1, 7, 2, 9], 5: [2, 3, 0, 6, 9], 6: [0, 5, 8], 7: [1, 3, 4, 2], 8: [1, 0, 6], 9: [4, 2, 0, 5]})
+        #points_t = [(18,-41), (-177,178),(17,-103),(-110,-196),(2,-59),(65,-119),(95,121),(-100,-112),(-141,194),(20,-102)]
         # Graph.st_edge = (0, 5)
         #for i, p in enumerate(points_t):
         #    points.append(Point(p[0], p[1], i))
-        #tmp_graph, points = generate_random_graph(i, return_points=True)
-        tmp_graph = get_random_non_planar_graph(i)
+        tmp_graph, points = generate_random_graph(i, return_points=True)
+        #tmp_graph = get_random_non_planar_graph(i)
         # show_graph(tmp_graph, points, True)
         graphs_lists.append(tmp_graph.adj_list)
         print("GRAPH" + str(tmp_graph.adj_list))
