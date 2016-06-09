@@ -147,8 +147,11 @@ def __get_graph_from_triangulation(triangulation):
                 g.add_edge(Edge(edge.vertices[0].id, edge.vertices[1].id))
     return g
 
+iteration_count = 0
+
 
 def generate_random_graph(num, return_points=False):
+    global iteration_count
     assert num > 0
     points = generate_random_points(num, -num * 20, num * 20)
 
@@ -165,6 +168,9 @@ def generate_random_graph(num, return_points=False):
     for point in points:
         bad_triangles = []
         polygon = []
+
+        iteration_count += 1
+        print(iteration_count)
 
         for triangle in triangulation:
             if triangle.circum_circle_contains(point):
@@ -208,6 +214,16 @@ def generate_random_graph(num, return_points=False):
         return g, points
     else:
         return g
+
+
+def get_random_non_planar_graph(size, p=0.5):
+    g = Graph()
+    for i in range(size):
+        for j in range(i, size):
+            if i != j:
+                if random.random() < p:
+                    g.add_edge(Edge(i, j))
+    return g
 
 def show_graph(g, p, static_graph=False):
     ax = pylab.subplot()

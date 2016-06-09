@@ -70,12 +70,23 @@ class Graph(object):
         # Store old vertex numbers when st-numbering is computed
         self.vertex_mapping = {}
         self.st_edge = Graph.st_edge
+        self.adj_edges_list = {}
 
     def add_edge(self, edge):
         assert type(edge) == Edge
         self.edges_list.append(edge)
         v0 = edge.vertices[0]
         v1 = edge.vertices[1]
+
+        if v0 not in self.adj_edges_list:
+            self.adj_edges_list[v0] = []
+
+        self.adj_edges_list[v0].append(edge)
+
+        if v1 not in self.adj_edges_list:
+            self.adj_edges_list[v1] = []
+
+        self.adj_edges_list[v1].append(edge)
 
         if v0 in self.adj_list and v1 in self.adj_list:
             if v0 in self.adj_list[v1] and v1 in self.adj_list[v0]:
@@ -113,42 +124,38 @@ class Graph(object):
             for j in adj_list[i]:
                 if j < i:
                     continue
-                self.edges_list.append(Data(UndirectedEdge(i, j)))
+                edge = Data(UndirectedEdge(i, j))
+                self.edges_list.append(edge)
+                if i not in self.adj_edges_list:
+                    self.adj_edges_list[i] = []
+                self.adj_edges_list[i].append(edge)
+                if j not in self.adj_edges_list:
+                    self.adj_edges_list[j] = []
+                self.adj_edges_list[j].append(edge)
+
             self.new_adj_list[i] = []
         self.adj_list = adj_list.copy()
-
-    def generate_random_graph(self, num_vertices, prob):
-        raise NotImplementedError()
-
-    def read_from_file(self, filename):
-        parsed_edges = []
-        f = open(filename, "r")
-        for line in f.readlines():
-            parsed = line.split("-")
-            first_node = int(parsed[0])
-            second_node = int(parsed[1])
-            parsed_edges.append((first_node, second_node))
-        raise NotImplementedError()
 
     # FIXME: implement more effectively
     def get_edges_lower(self, number):
         edges = []
-        for edge in self.edges_list:
+        for edge in self.adj_edges_list[number]:
             if edge.data.get_lower() == number:
                 edges.append(edge)
         return edges
 
-    # FIXME: implement more effectively
-    # Perhaps it would be better to use map for storing edges
     def get_edges_higher(self, number):
         edges = []
-        for edge in self.edges_list:
+        for edge in self.adj_edges_list[number]:
             if edge.data.get_higher() == number:
                 edges.append(edge)
         return edges
 
     def has_edge(self, v, k):
-        return v in self.adj_list.keys() and k in self.adj_list[v]
+        try:
+            return k in self.adj_list[v]
+        except KeyError:
+            return False
 
     def get_num_of_vertices(self):
         return self.num_of_vertices
@@ -157,30 +164,31 @@ class Graph(object):
         cycle = []
         marks = {i: 0 for i in self.adj_list.keys()}
 
-        def dfs_cycle(c, m, p, v):
-            m[v] = 1
+        def dfs_cycle(p, v):
+            nonlocal cycle, marks
+            marks[v] = 1
             for k in self.adj_list[v]:
                 if k == p:
                     continue
-                if not m[k]:
-                    c.append((v, k))
-                    if dfs_cycle(c, m, v, k):
+                if not marks[k]:
+                    cycle.append((v, k))
+                    if dfs_cycle(v, k):
                         return True
                     else:
-                        c.pop()
-                if m[k] == 1:
-                    c.append((v, k))
+                        cycle.pop()
+                if marks[k] == 1:
+                    cycle.append((v, k))
                     tmp_c = []
-                    for n in c:
+                    for i, n in enumerate(cycle):
                         if n[0] == k:
-                            tmp_c.extend(c[n[0]:])
-                            c = tmp_c[:]
+                            tmp_c.extend(cycle[i:])
+                            cycle = tmp_c[:]
                             return True
                     return True
-            m[v] = 2
+            marks[v] = 2
             return False
 
-        if not dfs_cycle(cycle, marks, -1, list(self.adj_list.keys())[0]):
+        if not dfs_cycle(-1, list(self.adj_list.keys())[0]):
             return []
         else:
             result = []
@@ -191,8 +199,10 @@ class Graph(object):
     def get_adjacent_vertices(self, vertex):
         return self.adj_list[vertex]
 
-    def get_segments(self, cycle, neighbors):
+    def get_segments(self, cycle, neighbors_tmp):
         segments = []
+
+        neighbors = neighbors_tmp.copy()
 
         cycle_list = {i: False for i in self.adj_list.keys()}
         for i in cycle:
@@ -213,45 +223,40 @@ class Graph(object):
                     single_edge_segments.append(e)
                     segments.append(seg)
                     already_processed[v] = True
+                    neighbors[v][n] = True
+                    neighbors[n][v] = True
 
-        def __dfs_segment_recursive(vertex, dfs_marks, graph_cycle, segment):
+        def __dfs_segment_recursive(vertex, dfs_marks, graph_cycle, segment, parent):
             nonlocal single_edge_segments
 
             dfs_marks[vertex] = True
             for adj in self.adj_list[vertex]:
-                if not dfs_marks[adj]:
-                    # Should not go through cycle
-                    if neighbors[vertex][adj]:
-                        dfs_marks[adj] = True
-                        continue
 
+                # Should not go through cycle
+                if adj == parent or neighbors[vertex][adj]:
+                    continue
+
+                #if not segment.has_edge(vertex, adj):
+                segment.add_edge(Edge(vertex, adj))
+
+                if not dfs_marks[adj]:
                     # If reached cycle, add edge, but do not go to recursion
-                    if adj in graph_cycle:
-                        segment.add_edge(Edge(adj, vertex))
+                    if graph_cycle[adj]:
+                        # segment.add_edge(Edge(adj, vertex))
                         dfs_marks[adj] = True
                         continue
 
-                    # Check for single edge segments which has already been added on step 1
-                    if Edge(adj, vertex) in single_edge_segments:
-                        dfs_marks[adj] = True
-                        continue
+                    __dfs_segment_recursive(adj, dfs_marks, graph_cycle, segment, vertex)
 
-                    __dfs_segment_recursive(adj, dfs_marks, graph_cycle, segment)
-
-        def dfs_segment(start, dfs_marks, graph_cycle, segment):
-            dfs_marks[start] = True
-            for adj in self.adj_list[start]:
-                if not dfs_marks[adj]:
-                    # Should go only to single vertices at a time
-                    __dfs_segment_recursive(adj, dfs_marks, graph_cycle, segment)
-                    break
+        def dfs_segment(start, dfs_marks, graph_cycle, segment, parent):
+            __dfs_segment_recursive(start, dfs_marks, graph_cycle, segment, parent)
 
         # Search for segments with multiple edges
         marks = {i: False for i in self.adj_list.keys()}
         for v in cycle:
             if not marks[v]:
                 seg = Graph()
-                dfs_segment(v, marks, cycle, seg)
+                __dfs_segment_recursive(v, marks, cycle_list, seg, -1)
                 # Ignore segments with 2 vertices since they already been added
                 if seg.get_num_of_vertices() > 2:
                     segments.append(seg)
@@ -267,6 +272,12 @@ class Graph(object):
                 if adj_v not in partial_embedding:
                     if self.dfs_chain(marks, partial_embedding, chain, adj_v):
                         count_marks += 1
+                        if count_marks == len(self.adj_list[v]):
+                            #for t in self.adj_list[v]:
+                            #    if t in partial_embedding:
+                            #        return
+                            chain.pop()
+                            return True
                         continue
                 else:
                     chain.append(adj_v)
@@ -276,6 +287,7 @@ class Graph(object):
                 if count_marks == len(self.adj_list[v]):
                     for t in self.adj_list[v]:
                         if t in partial_embedding:
+                            chain.append(t)
                             return
                     chain.pop()
                     return True
@@ -435,6 +447,11 @@ class Graph(object):
 
         for edge in self.edges_list:
             edge.data.vertices = (numbering[edge.data.vertices[0]], numbering[edge.data.vertices[1]])
+        new_edge_adj_list = {}
+        for id in self.adj_edges_list.keys():
+            new_edge_adj_list[numbering[id]] = self.adj_edges_list[id]
+
+        self.adj_edges_list = new_edge_adj_list
 
     def get_edges(self):
         return self.edges_list

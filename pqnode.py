@@ -598,6 +598,25 @@ class PQnode(object):
         self.label = Label.EMPTY
         self.is_pseudo_node = False
 
+    def reset_non_req(self):
+        # Common part for all nodes
+        self.full_children = dllist()
+        self.partial_children = dllist()
+        self.pertinent_child_count = 0
+        self.pertinent_leaf_count = 0
+        self.mark = Mark.UNMARKED
+        self.label = Label.EMPTY
+        self.is_pseudo_node = False
+        if self.parent is not None:
+            self.parent.full_children = dllist()
+            self.parent.partial_children = dllist()
+            self.parent.pertinent_child_count = 0
+            self.parent.pertinent_leaf_count = 0
+            self.parent.mark = Mark.UNMARKED
+            self.parent.label = Label.EMPTY
+            self.parent.is_pseudo_node = False
+
+
     def full_reset_node(self):
         self.full_children = dllist()
         self.partial_children = dllist()

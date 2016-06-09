@@ -79,7 +79,7 @@ def correct_direction(adj_list, n):
                         p = len(adj_list[tmp_id]) // 2
                         if type(adj_list[tmp_id][p]) == str:
                             if adj_list[tmp_id][p][0] == "|":
-                                adj_list[tmp_id][p] = "< " + adj_list[tmp_id][p][1] + "|"
+                                adj_list[tmp_id][p] = "<" + adj_list[tmp_id][p][1] + "|"
                             elif adj_list[tmp_id][p][0] == "<":
                                 adj_list[tmp_id][p] = "|" + adj_list[tmp_id][p][1] + ">"
                             else:
@@ -92,7 +92,7 @@ def correct_direction(adj_list, n):
                         for p in [k, len(adj_list[tmp_id]) - 1 - k]:
                             if type(adj_list[tmp_id][p]) == str:
                                 if adj_list[tmp_id][p][0] == "|":
-                                    adj_list[tmp_id][p] = "< " + adj_list[tmp_id][p][1] + "|"
+                                    adj_list[tmp_id][p] = "<" + adj_list[tmp_id][p][1] + "|"
                                 elif adj_list[tmp_id][p][0] == "<":
                                     adj_list[tmp_id][p] = "|" + adj_list[tmp_id][p][1] + ">"
                                 else:
