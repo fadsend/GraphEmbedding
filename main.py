@@ -67,8 +67,10 @@ def main():
 
     points_list = {}
 
-    vertices = [10 * 2 ** i for i in range(9)]
-    NON_PLANAR = False
+    # vertices = [10 * 2 ** i for i in range(8)]
+    vertices = [1000] # list(range(10, 1000, 50))
+    #vertices = [200]
+    NON_PLANAR = True
     # TODO: change
     for idx, i in enumerate(vertices):
         # TODO: create testsuite for this graphs
@@ -101,8 +103,8 @@ def main():
         # Graph.st_edge = (0, 5)
         #for i, p in enumerate(points_t):
         #    points.append(Point(p[0], p[1], i))
-        tmp_graph, points = generate_random_graph(i, return_points=True)
-        #tmp_graph = get_random_non_planar_graph(i)
+        # tmp_graph, points = generate_random_graph(i, return_points=True)
+        tmp_graph = get_random_non_planar_graph(i)
         # show_graph(tmp_graph, points, True)
         graphs_lists.append(tmp_graph.adj_list)
         print("GRAPH" + str(tmp_graph.adj_list))
@@ -127,7 +129,7 @@ def main():
         "linear": True,
         "gamma": True,
         # TODO: change
-        "retries": 10
+        "retries": 1
     }
 
     results = {

@@ -2,6 +2,7 @@ from graph import Graph
 
 
 def gamma_algorithm(graph):
+
     cycle = graph.find_cycle()
     print(cycle)
 
@@ -9,7 +10,11 @@ def gamma_algorithm(graph):
     outer_face = cycle[:]
     faces.append(outer_face)
 
-    partial_embedding = cycle[:]
+    partial_embedding = {i: False for i in graph.adj_list.keys()}
+    for c in cycle:
+        partial_embedding[c] = True
+    # partial_embedding = cycle[:]
+
     neighbors = [
         [False for _ in range(len(graph.adj_list) + 1)]
                for _ in range(len(graph.adj_list) + 1)
@@ -35,6 +40,7 @@ def gamma_algorithm(graph):
         # Find segment which could be embedded in minimum number of faces
         min_segment_id = -1
         min_faces_count = 999999999
+
         for idx in range(len(segments)):
             for face in faces:
                 if graph.face_has_segment(face, segments[idx], partial_embedding):
@@ -56,8 +62,9 @@ def gamma_algorithm(graph):
         # Embed chain of segment to face
         chain = segment_to_embed.get_chain(partial_embedding)
         for v in chain:
-            if v not in partial_embedding:
-                partial_embedding.append(v)
+            partial_embedding[v] = True
+            #if v not in partial_embedding:
+            #    partial_embedding.append(v)
         for i in range(len(chain) - 1):
             neighbors[chain[i]][chain[i + 1]] = True
             neighbors[chain[i + 1]][chain[i]] = True
@@ -73,8 +80,8 @@ def gamma_algorithm(graph):
             if face_to_embed[idx] == chain[-1]:
                 end_v = idx
 
-        if end_v == -1:
-            print("1r")
+        #if end_v == -1:
+        #    print("1r")
         assert start_v != -1 and end_v != -1
 
         face_size = len(face_to_embed)

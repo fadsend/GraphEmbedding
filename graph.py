@@ -72,6 +72,20 @@ class Graph(object):
         self.st_edge = Graph.st_edge
         self.adj_edges_list = {}
 
+        self.use_matrix = False
+        self.adj_matrix = []
+
+    def fill_adj_matrix(self):
+        self.adj_matrix = [[False] * len(self.adj_list.keys())] * len(self.adj_list.keys())
+        for i in self.adj_list.keys():
+            for j in self.adj_list[i]:
+                self.adj_matrix[i][j] = True
+                self.adj_matrix[j][i] = True
+
+    def set_matrix_use(self, max_size):
+        self.use_matrix = True
+        self.adj_matrix = [[False for _ in range(max_size)] for _ in range(max_size)]
+
     def add_edge(self, edge):
         assert type(edge) == Edge
         self.edges_list.append(edge)
@@ -87,6 +101,10 @@ class Graph(object):
             self.adj_edges_list[v1] = []
 
         self.adj_edges_list[v1].append(edge)
+
+        if self.use_matrix:
+            self.adj_matrix[v1][v0] = True
+            self.adj_matrix[v0][v1] = True
 
         if v0 in self.adj_list and v1 in self.adj_list:
             if v0 in self.adj_list[v1] and v1 in self.adj_list[v0]:
@@ -104,7 +122,7 @@ class Graph(object):
         else:
             self.adj_list[v1].append(v0)
 
-    def construct_graph_from_list(self, list_of_edges):
+    def construct_graph_from_list(self, list_of_edges, with_data=True):
         tmp_vertices = []
         for edge in list_of_edges:
             for i in range(2):
@@ -113,10 +131,17 @@ class Graph(object):
                     self.adj_list[edge.vertices[i]] = []
                     self.new_adj_list[edge.vertices[i]] = []
                     tmp_vertices.append(edge.vertices[i])
+            if with_data:
+                self.edges_list.append(Data(UndirectedEdge(edge.vertices[0], edge.vertices[1])))
+            else:
+                self.edges_list.append(UndirectedEdge(edge.vertices[0], edge.vertices[1]))
 
-            self.edges_list.append(Data(UndirectedEdge(edge.vertices[0], edge.vertices[1])))
             self.adj_list[edge.vertices[0]].append(edge.vertices[1])
             self.adj_list[edge.vertices[1]].append(edge.vertices[0])
+
+            if self.use_matrix:
+                self.adj_matrix[edge.vertices[0]][edge.vertices[1]] = True
+                self.adj_matrix[edge.vertices[1]][edge.vertices[0]] = True
 
     def construct_graph_from_adj_list(self, adj_list: dict):
         for i in adj_list.keys():
@@ -132,6 +157,9 @@ class Graph(object):
                 if j not in self.adj_edges_list:
                     self.adj_edges_list[j] = []
                 self.adj_edges_list[j].append(edge)
+                if self.use_matrix:
+                    self.adj_matrix[j][i] = True
+                    self.adj_matrix[i][j] = True
 
             self.new_adj_list[i] = []
         self.adj_list = adj_list.copy()
@@ -152,10 +180,16 @@ class Graph(object):
         return edges
 
     def has_edge(self, v, k):
-        try:
-            return k in self.adj_list[v]
-        except KeyError:
-            return False
+        if self.use_matrix:
+            return self.__has_edge_fast(v, k)
+        else:
+            try:
+                return k in self.adj_list[v]
+            except KeyError:
+                return False
+
+    def __has_edge_fast(self, v, k):
+        return self.adj_matrix[v][k]
 
     def get_num_of_vertices(self):
         return self.num_of_vertices
@@ -204,25 +238,33 @@ class Graph(object):
 
         neighbors = neighbors_tmp.copy()
 
-        cycle_list = {i: False for i in self.adj_list.keys()}
-        for i in cycle:
-            cycle_list[i] = True
+        tmp_cycle = []
+        for i in cycle.keys():
+            if cycle[i]:
+                tmp_cycle.append(i)
+
+        # cycle_list = cycle.copy()
+
+        # cycle_list = {i: False for i in self.adj_list.keys()}
+        # for i in cycle:
+        #    cycle_list[i] = True
 
         single_edge_segments = []
 
-        already_processed = {i: False for i in self.adj_list.keys()}
+        # already_processed = {i: False for i in self.adj_list.keys()}
         # Search for single-edge segments
-        for v in cycle:
+        for v in tmp_cycle:
             for n in self.adj_list[v]:
-                if already_processed[n]:
-                    continue
-                if not neighbors[v][n] and cycle_list[n]:
+                #if already_processed[n]:
+                #    continue
+                if not neighbors[v][n] and cycle[n]:
                     seg = Graph()
+                    # seg.set_matrix_use(len(self.adj_list.keys()))
                     e = Edge(v, n)
-                    seg.construct_graph_from_list([e])
+                    seg.construct_graph_from_list([e], False)
                     single_edge_segments.append(e)
                     segments.append(seg)
-                    already_processed[v] = True
+                    # already_processed[v] = True
                     neighbors[v][n] = True
                     neighbors[n][v] = True
 
@@ -253,14 +295,15 @@ class Graph(object):
 
         # Search for segments with multiple edges
         marks = {i: False for i in self.adj_list.keys()}
-        for v in cycle:
+        for v in tmp_cycle:
             if not marks[v]:
                 for adj in self.adj_list[v]:
                     if not neighbors[v][adj]:
                         marks[v] = True
                         seg = Graph()
+                        # seg.set_matrix_use(len(self.adj_list.keys()))
                         seg.add_edge(Edge(v, adj))
-                        __dfs_segment_recursive(adj, marks, cycle_list, seg, v)
+                        __dfs_segment_recursive(adj, marks, cycle, seg, v)
                         # Ignore segments with 2 vertices since they already been added
                         if seg.get_num_of_vertices() > 2:
                             segments.append(seg)
@@ -273,7 +316,8 @@ class Graph(object):
         count_marks = 0
         for adj_v in self.adj_list[v]:
             if not marks[adj_v]:
-                if adj_v not in partial_embedding:
+                if not partial_embedding[adj_v]:
+                #if adj_v not in partial_embedding:
                     if self.dfs_chain(marks, partial_embedding, chain, adj_v):
                         count_marks += 1
                         if count_marks == len(self.adj_list[v]):
@@ -290,7 +334,8 @@ class Graph(object):
                 count_marks += 1
                 if count_marks == len(self.adj_list[v]):
                     for t in self.adj_list[v]:
-                        if t in partial_embedding:
+                        if partial_embedding[t]:
+                        #if t in partial_embedding:
                             chain.append(t)
                             return
                     chain.pop()
@@ -300,22 +345,35 @@ class Graph(object):
         chain = []
         marks = {i: False for i in self.adj_list.keys()}
         for v in self.adj_list.keys():
-            if v in partial_embedding:
+            if partial_embedding[v]:
+            #if v in partial_embedding:
                 if len(self.adj_list[v]) != 0:
                     self.dfs_chain(marks, partial_embedding, chain, v)
                     break
 
-        print(chain)
+        #print(chain)
         return chain
 
     # TODO: understand
     def face_has_segment(self, face, segment, partial_embedding):
-        for v in self.adj_list.keys():
-            for k in self.adj_list[v]:
-                if segment.has_edge(v, k):
-                    if v in partial_embedding and v not in face or \
-                       k in partial_embedding and k not in face:
-                        return False
+        face_dict = {i: False for i in self.adj_list.keys()}
+        for i in face:
+            face_dict[i] = True
+
+        # for edge in self.edges_list:
+        for edge in segment.edges_list:
+        #for v in self.adj_list.keys():
+        #    for k in self.adj_list[v]:
+            v = edge.vertices[0]
+            k = edge.vertices[1]
+            #if segment.__has_edge_fast(v, k):
+            if partial_embedding[v] and not face_dict[v] or \
+               partial_embedding[k] and not face_dict[k]:
+                return False
+
+                #if v in partial_embedding and not v not in face or \
+                #   k in partial_embedding and not k not in face:
+                #        return False
         return True
 
     def __get_random_edge(self):
